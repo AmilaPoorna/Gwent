@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Gwent</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="preload" href="assets/fonts/D-DINCondensed.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/style.css?v=4">
+</head>
+<body>
+<div id="viewport">
+  <div id="stage">
+
+    <!-- ============================================================ Home -->
+    <section id="menu" class="screen active">
+      <button id="btn-play" class="play">Play</button>
+    </section>
+
+    <!-- ============================================================ Deck builder (The Witcher 3 layout) -->
+    <section id="builder" class="screen">
+      <div class="db-faction">
+        <button class="db-side prev" id="db-prev"><span class="db-side-name"></span><kbd>Q</kbd></button>
+        <div class="db-current">
+          <div class="db-shield"></div>
+          <div class="db-chosen">Chosen Faction</div>
+          <div class="db-fname"></div>
+          <div class="db-dots"></div>
+        </div>
+        <button class="db-side next" id="db-next"><kbd>E</kbd><span class="db-side-name"></span></button>
+      </div>
+      <div class="db-perk" id="db-perk"></div>
+
+      <div class="db-col left">
+        <div class="db-title">Card Collection</div>
+        <div class="db-filter-name"></div>
+        <div class="db-filters" data-side="pool"></div>
+        <div class="db-grid" id="db-pool"></div>
+      </div>
+      <div class="db-mid">
+        <div class="db-leader-label">Leader</div>
+        <div id="db-leader"></div>
+        <div id="db-stats"></div>
+      </div>
+      <div class="db-col right">
+        <div class="db-title">Cards in Deck</div>
+        <div class="db-filter-name"></div>
+        <div class="db-filters" data-side="deck"></div>
+        <div class="db-grid" id="db-deck"></div>
+      </div>
+      <div class="hints" id="db-hints"></div>
+    </section>
+
+    <!-- ============================================================ Board (laid out on the original board art) -->
+    <section id="game" class="screen">
+      <div id="op-leader" class="leader-slot"></div>
+      <div id="op-leader-active" class="leader-active"></div>
+      <div id="op-panel" class="ppanel op">
+        <div class="pp-portrait"></div><div class="pp-shield"></div>
+        <div class="pp-name"></div>
+        <div class="pp-faction"></div>
+        <div class="pp-stats"><span class="pp-hand"><i></i><b>0</b></span><span class="pp-gems"><i></i><i></i></span></div>
+      </div>
+      <div id="op-passed" class="passed">Passed</div>
+      <div id="op-total" class="total"><div class="laurel"></div><span>0</span></div>
+
+      <div id="weather" class="weather-zone"></div>
+      <button id="pass-hint" class="pass-hint"><span class="ring"></span><kbd>Space</kbd><span class="ph-text">[HOLD] Pass</span></button>
+
+      <div id="me-passed" class="passed">Passed</div>
+      <div id="me-panel" class="ppanel me">
+        <div class="pp-portrait"></div><div class="pp-shield"></div>
+        <div class="pp-stats"><span class="pp-hand"><i></i><b>0</b></span><span class="pp-gems"><i></i><i></i></span></div>
+        <div class="pp-name"></div>
+        <div class="pp-faction"></div>
+      </div>
+      <div id="me-total" class="total"><div class="laurel"></div><span>0</span></div>
+      <div id="me-leader" class="leader-slot"></div>
+      <div id="me-leader-active" class="leader-active"></div>
+
+      <div class="row op" id="row-op-siege" data-side="op" data-row="siege"><div class="row-score"></div><div class="row-special"></div><div class="row-cards"></div><div class="row-wx"></div></div>
+      <div class="row op" id="row-op-ranged" data-side="op" data-row="ranged"><div class="row-score"></div><div class="row-special"></div><div class="row-cards"></div><div class="row-wx"></div></div>
+      <div class="row op" id="row-op-close" data-side="op" data-row="close"><div class="row-score"></div><div class="row-special"></div><div class="row-cards"></div><div class="row-wx"></div></div>
+      <div class="row me" id="row-me-close" data-side="me" data-row="close"><div class="row-score"></div><div class="row-special"></div><div class="row-cards"></div><div class="row-wx"></div></div>
+      <div class="row me" id="row-me-ranged" data-side="me" data-row="ranged"><div class="row-score"></div><div class="row-special"></div><div class="row-cards"></div><div class="row-wx"></div></div>
+      <div class="row me" id="row-me-siege" data-side="me" data-row="siege"><div class="row-score"></div><div class="row-special"></div><div class="row-cards"></div><div class="row-wx"></div></div>
+      <div id="hand"></div>
+
+      <div id="op-grave" class="pile grave" data-pile="op-grave"></div>
+      <div id="op-deck" class="pile deck"></div>
+      <div id="me-grave" class="pile grave" data-pile="me-grave"></div>
+      <div id="me-deck" class="pile deck"></div>
+
+      <div id="preview"></div>
+      <div id="preview-desc" class="desc-box"></div>
+      <div id="hint"></div>
+      <div class="hints" id="game-hints"></div>
+    </section>
+
+    <!-- ============================================================ Overlays -->
+    <div id="banner"><div class="bn-icon"></div><span></span></div>
+
+    <div id="chooser" class="overlay">
+      <div class="ch-band"><span class="ch-title"></span></div>
+      <div class="ch-carousel"></div>
+      <div class="ch-desc desc-box"></div>
+      <div class="hints ch-hints"></div>
+    </div>
+
+    <div id="dialog" class="overlay">
+      <div class="dlg-box">
+        <div class="dlg-text"></div>
+        <div class="dlg-buttons"></div>
+      </div>
+    </div>
+
+    <div id="gameover" class="overlay">
+      <div class="go-title"></div>
+      <table class="go-table"></table>
+      <div class="hints go-hints"></div>
+    </div>
+
+    <div id="toast"></div>
+  </div>
+</div>
+<div id="rotate-hint">Rotate your device to landscape</div>
+
+<script src="js/cards.js?v=4"></script>
+<script src="js/engine.js?v=4"></script>
+<script src="js/ai.js?v=4"></script>
+<script src="js/ui.js?v=4"></script>
+<script src="js/deckbuilder.js?v=4"></script>
+<script src="js/main.js?v=4"></script>
+</body>
+</html>

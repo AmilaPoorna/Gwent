@@ -1,0 +1,20 @@
+{
+  "name": "gwent",
+  "version": "1.0.0",
+  "description": "Gwent from The Witcher 3 with the original game assets: runs in any browser on PC and Android, packageable as an Android app",
+  "private": true,
+  "scripts": {
+    "start": "python3 -m http.server 8080 --directory www",
+    "test": "node tests/rules.js && node tests/selfplay.js 300",
+    "android:init": "npx cap add android",
+    "android:sync": "npx cap sync android",
+    "android:open": "npx cap open android",
+    "android:build": "npx cap sync android && cd android && ./gradlew assembleDebug",
+    "test:browser": "node tests/browser-playtest.js"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/cli": "^6.2.0",
+    "@capacitor/core": "^6.2.0"
+  }
+}

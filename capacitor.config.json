@@ -1,0 +1,8 @@
+{
+  "appId": "com.example.gwent",
+  "appName": "Gwent",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#140e09"
+  }
+}
