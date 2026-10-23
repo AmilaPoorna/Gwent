@@ -79,6 +79,13 @@ const code = `
   { const g = game('foltest_lord', 'foltest_lord', ['roach', 'ciri']);
     await play(g, 0, hand(g, 0, 'geralt'), 'close');
     eq('geralt musters roach', g.s.players[0].rows.close.cards.map(c => c.id), ['geralt', 'roach']); }
+  // Gaunter O'Dimm summons the Darkness cards; a Darkness card summons nothing
+  { const g = game('foltest_lord', 'foltest_lord', ['gaunter_darkness', 'gaunter_darkness', 'gaunter_darkness']);
+    await play(g, 0, hand(g, 0, 'gaunter'), 'siege');
+    eq('gaunter musters darkness', g.s.players[0].rows.ranged.cards.map(c => c.id), ['gaunter_darkness', 'gaunter_darkness', 'gaunter_darkness']); }
+  { const g = game('foltest_lord', 'foltest_lord', ['gaunter', 'gaunter_darkness', 'gaunter_darkness']);
+    await play(g, 0, hand(g, 0, 'gaunter_darkness'), 'ranged');
+    eq('darkness musters nothing', [g.s.players[0].rows.ranged.cards.length, g.s.players[0].rows.siege.cards.length, g.s.players[0].deck.length], [1, 0, 3]); }
   // Muster across names (vampires, arachas behemoth to siege)
   { const g = game('eredin_commander', 'foltest_lord', ['arachas', 'arachas_behemoth', 'vampire_fleder']);
     await play(g, 0, hand(g, 0, 'arachas'), 'close');

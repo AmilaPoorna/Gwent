@@ -92,7 +92,7 @@ defUnits('neutral', [
   ['villen', 'Villentretenmerth', 7, 'close', 'scorch_c'],
   ['regis', 'Emiel Regis Rohellec Terzieff', 5, 'close', ''],
   ['gaunter', "Gaunter O'Dimm", 2, 'siege', 'muster', 1, { group: 'gaunter' }],
-  ['gaunter_darkness', "Gaunter O'Dimm: Darkness", 4, 'ranged', 'muster', 3, { group: 'gaunter' }],
+  ['gaunter_darkness', "Gaunter O'Dimm: Darkness", 4, 'ranged', 'muster', 3, { group: 'gaunter', muster: null }], // summoned by Gaunter O'Dimm, summons nothing itself
   ['olgierd', 'Olgierd von Everec', 6, 'agile', 'morale'],
   ['cow', 'Cow', 0, 'ranged', 'avenger', 1, { target: 'chort' }],
   ['chort', 'Bovine Defense Force', 8, 'close', '', 0, { token: true }],

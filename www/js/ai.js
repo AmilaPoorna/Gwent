@@ -54,7 +54,7 @@ class AIController {
     const seen = new Set();
     for (const c of p.hand) {
       const t = T(c);
-      const key = t.abilities.includes('muster') ? 'm:' + t.group : t.type === 'weather' ? 'w:' + c.id : null;
+      const key = t.abilities.includes('muster') && t.muster !== null ? 'm:' + t.group : t.type === 'weather' ? 'w:' + c.id : null;
       if (!key) continue;
       if (seen.has(key)) return c;
       seen.add(key);

@@ -534,8 +534,8 @@ const UI = {
     }
     if (!$('#game').classList.contains('active')) return;
     if ($('#gameover').classList.contains('show')) {
-      if (e.key === 'Enter') this.gameOverAct('again');
-      if (e.key === 'Escape') this.gameOverAct('deck');
+      // Stop the key here: the deck builder also listens for Esc and would close itself straight away
+      if (e.key === 'Enter' || e.key === 'Escape') { e.stopImmediatePropagation(); this.gameOverAct(e.key === 'Enter' ? 'again' : 'deck'); }
       return;
     }
     if (e.key === 'Escape') {

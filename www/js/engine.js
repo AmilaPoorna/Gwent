@@ -383,7 +383,7 @@ class Game {
   }
 
   async muster(p, c) {
-    const g = T(c).muster || T(c).group;
+    const g = T(c).muster !== undefined ? T(c).muster : T(c).group; // muster: null shows the ability but summons nothing
     const pulled = p.deck.filter(x => x.uid !== c.uid && isUnit(x) && T(x).group === g);
     if (!pulled.length) return;
     this.sfx('muster');
