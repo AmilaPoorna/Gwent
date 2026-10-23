@@ -60,24 +60,28 @@ close.
 The assets are the property of CD PROJEKT RED. This is a non-commercial fan project. Don't sell it or put it
 behind a paywall.
 
-## Running
+## Play
 
-**PC:** serve the `www` folder with any static web server.
+- **In a browser, on PC or phone:** https://amilapoorna.github.io/gwent/
+- **Android app:** [gwent.apk](https://github.com/AmilaPoorna/gwent/releases/latest/download/gwent.apk)
+
+Step-by-step instructions for players are in [HOW_TO_INSTALL_AND_PLAY.md](HOW_TO_INSTALL_AND_PLAY.md).
+
+## Publishing
+
+Every push to `master` runs two GitHub Actions workflows:
+
+- `pages.yml` publishes `www/` on GitHub Pages.
+- `android.yml` builds the release APK with Capacitor and publishes it as the latest release (`gwent.apk`). It
+  signs the APK with the keystore in the repository secrets `GWENT_KEYSTORE_BASE64` and
+  `GWENT_KEYSTORE_PASSWORD` (alias `gwent`). Keep a copy of that keystore: Android only installs an update over
+  an existing app when both are signed with the same key.
+
+## Running locally
 
 ```sh
-npm start            # python3 -m http.server 8080 --directory www
-# open http://localhost:8080
-```
-
-**Android, from the browser:** host `www/` anywhere that serves HTTPS (GitHub Pages, Netlify, …). Open it in
-Chrome, then choose *Install app*. It runs full-screen in landscape and works offline.
-
-**Android APK** (needs Node, Android Studio and a JDK):
-
-```sh
-npm install
-npm run android:init     # once
-npm run android:build    # → android/app/build/outputs/apk/debug/app-debug.apk
+npm start                              # serves www/ at http://localhost:8080
+npm install && npm run android:build   # debug APK; needs JDK 21 and the Android SDK
 ```
 
 ## Tests
@@ -103,6 +107,8 @@ www/
   js/deckbuilder.js     deck builder (auto-saved decks per faction)
   js/main.js            app flow
   assets/               original card art, UI, sound effects, music; bundled font
+android/                the Android app (Capacitor), built by .github/workflows/android.yml
+.github/workflows/      GitHub Pages and APK builds
 tools/                  scripts that produced the derived assets
 tests/                  rule tests, self-play and browser playtests
 ```

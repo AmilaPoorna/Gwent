@@ -4,7 +4,7 @@
  * Each faction has one deck; every change is saved immediately, so a deck only ever needs editing.
  */
 
-function savedDecks() { return Store.get('decks', {}); }
+function savedDecks() { const d = Store.get('decks', {}); return d && typeof d === 'object' && !Array.isArray(d) ? d : {}; }
 
 /** The saved deck for a faction (or its starter deck the first time). */
 function loadDeck(faction) {

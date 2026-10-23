@@ -9,7 +9,7 @@ const TOUCH = matchMedia('(pointer: coarse)').matches;
 if (TOUCH) document.documentElement.classList.add('touch');
 
 const Store = {
-  get(k, d) { try { const v = localStorage.getItem('gwent.' + k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  get(k, d) { try { const v = localStorage.getItem('gwent.' + k); return v ? JSON.parse(v) ?? d : d; } catch { return d; } },
   set(k, v) { try { localStorage.setItem('gwent.' + k, JSON.stringify(v)); } catch { /* storage unavailable */ } },
 };
 

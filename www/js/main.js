@@ -8,9 +8,12 @@ function startMatch(deck) {
   UI.startGame(deck, opp);
 }
 
+// Inside the Android app (Capacitor), full screen and landscape come from the app itself
+const NATIVE = !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
+
 function enterFullscreen() {
   const el = document.documentElement;
-  if (document.fullscreenElement || !matchMedia('(pointer: coarse)').matches) return;
+  if (NATIVE || document.fullscreenElement || !matchMedia('(pointer: coarse)').matches) return;
   const req = el.requestFullscreen || el.webkitRequestFullscreen;
   if (!req) return;
   Promise.resolve(req.call(el, { navigationUI: 'hide' }))
@@ -36,7 +39,15 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && $('#menu').classList.contains('active')) $('#btn-play').click();
 });
 
-if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+// Android back button: works like Esc (closes overlays, opens the pause menu, leaves the deck builder); on the home screen it exits
+if (NATIVE && Capacitor.Plugins.App) {
+  Capacitor.Plugins.App.addListener('backButton', () => {
+    if ($('#menu').classList.contains('active')) Capacitor.Plugins.App.exitApp();
+    else document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true }));
+  });
+}
+
+if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !NATIVE) {
   // When an updated version takes over, reload once so the new files are used straight away
   const hadController = !!navigator.serviceWorker.controller;
   let reloaded = false;
