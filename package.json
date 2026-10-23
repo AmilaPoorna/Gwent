@@ -6,15 +6,17 @@
   "scripts": {
     "start": "python3 -m http.server 8080 --directory www",
     "test": "node tests/rules.js && node tests/selfplay.js 300",
-    "android:init": "npx cap add android",
     "android:sync": "npx cap sync android",
     "android:open": "npx cap open android",
     "android:build": "npx cap sync android && cd android && ./gradlew assembleDebug",
     "test:browser": "node tests/browser-playtest.js"
   },
   "devDependencies": {
-    "@capacitor/android": "^6.2.0",
-    "@capacitor/cli": "^6.2.0",
-    "@capacitor/core": "^6.2.0"
+    "@capacitor/cli": "8.5.3"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/core": "8.5.3"
   }
 }
