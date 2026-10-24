@@ -366,3 +366,42 @@ function deckProblems(deck) {
   if (st.specials > DECK_RULES.maxSpecials) errs.push(`You can have at most ${DECK_RULES.maxSpecials} Special Cards (${st.specials}).`);
   return errs;
 }
+
+/* A random, legal and fairly strong deck for the computer opponent, so every match plays differently: heroes, spies
+   and medics are favoured, Muster and Tight Bond cards come with their whole family, a unit brings the cards it
+   summons, and the rest are the strongest units of a random selection. */
+const AI_SPECIALS = { decoy: 2, horn: 2, scorch: 1, frost: 1, fog: 1, rain: 1, storm: 1, clear: 1, mardroeme: 2 };
+
+function randomDeck(faction) {
+  const pool = Object.values(CARDS).filter(t => !t.token && !t.virtual && t.type !== 'leader' && t.count > 0 &&
+    (t.faction === faction || t.faction === 'neutral'));
+  const cards = [], copies = id => cards.filter(x => x === id).length;
+  const units = () => cards.filter(id => CARDS[id].type === 'unit').length, specials = () => cards.length - units();
+  const add = (t, n = t.count) => { while (n-- > 0 && copies(t.id) < t.count) cards.push(t.id); };
+  const unitPool = shuffle(pool.filter(t => t.type === 'unit'));
+  const families = ab => Object.values(unitPool.filter(t => t.abilities.includes(ab))
+    .reduce((g, t) => ((g[t.group] ||= []).push(t), g), {}));
+
+  for (const t of unitPool) if (t.hero && Math.random() < .75) add(t, 1);
+  for (const ab of ['spy', 'medic']) unitPool.filter(t => t.abilities.includes(ab) && !t.hero).slice(0, 2).forEach(t => add(t, 1));
+  for (const ab of ['muster', 'bond']) shuffle(families(ab)).slice(0, 2).forEach(f => f.forEach(t => add(t)));
+  for (const t of unitPool) if (copies(t.id) && t.muster) unitPool.filter(x => x.group === t.muster).forEach(x => add(x));
+  const score = new Map(unitPool.map(t => [t.id, t.strength + Math.random() * 4]));
+  for (const t of [...unitPool].sort((a, b) => score.get(b.id) - score.get(a.id))) {
+    if (units() >= 25) break;
+    if (!t.hero) add(t, 1);
+  }
+
+  const berserkers = cards.some(id => CARDS[id].abilities.includes('berserker'));
+  const wanted = 5 + Math.floor(Math.random() * 4);
+  let weather = 0;
+  for (const t of shuffle(pool.filter(t => t.type !== 'unit'))) {
+    if (specials() >= wanted) break;
+    if ((t.ability === 'mardroeme' && !berserkers) || (t.type === 'weather' && weather >= 3)) continue;
+    const n = Math.min(AI_SPECIALS[t.ability] || 0, wanted - specials());
+    add(t, n);
+    if (t.type === 'weather') weather += Math.min(n, 1);
+  }
+  const leader = pickRandom(Object.values(CARDS).filter(t => t.type === 'leader' && t.faction === faction)).id;
+  return { leader, cards };
+}

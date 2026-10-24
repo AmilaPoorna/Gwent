@@ -166,9 +166,25 @@ const DeckBuilder = {
 
   close() { if (this.onClose) this.onClose(); },
 
+  // Updates the grid in place: adding or removing a card only changes counts and moves single items, so the card
+  // faces aren't rebuilt (and their images re-decoded) on every click
   grid(el, ids, filter, countFn) {
     const sorted = ids.map(id => CARDS[id]).filter(t => matchesFilter(t, filter)).sort(builderOrder);
-    el.innerHTML = sorted.map(t => `<div class="db-item" data-id="${t.id}">${cardHTML({ id: t.id }, { size: 'db' })}<span class="db-count"><i></i>${countFn(t.id)}</span></div>`).join('');
+    const old = new Map([...el.children].map(x => [x.dataset.id, x]));
+    sorted.forEach((t, i) => {
+      let item = old.get(t.id);
+      if (item) old.delete(t.id);
+      else {
+        item = document.createElement('div');
+        item.className = 'db-item';
+        item.dataset.id = t.id;
+        item.innerHTML = `${cardHTML({ id: t.id }, { size: 'db' })}<span class="db-count"></span>`;
+      }
+      const badge = item.querySelector('.db-count'), n = String(countFn(t.id));
+      if (badge.textContent !== n || !badge.firstChild) badge.replaceChildren(document.createElement('i'), n);
+      if (el.children[i] !== item) el.insertBefore(item, el.children[i] || null);
+    });
+    for (const x of old.values()) x.remove();
   },
 
   renderHints() {

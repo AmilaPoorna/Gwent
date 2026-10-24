@@ -2,10 +2,7 @@
 /* App flow, as in the game: Play → deck builder (choose faction, leader and deck) → match → results. */
 
 function startMatch(deck) {
-  const faction = pickRandom(PLAYABLE_FACTIONS);
-  const opp = structuredClone(DEFAULT_DECKS[faction]);
-  opp.leader = pickRandom(Object.values(CARDS).filter(t => t.type === 'leader' && t.faction === faction)).id;
-  UI.startGame(deck, opp);
+  UI.startGame(deck, randomDeck(pickRandom(PLAYABLE_FACTIONS))); // a new opponent every match
 }
 
 // Inside the Android app (Capacitor), full screen and landscape come from the app itself

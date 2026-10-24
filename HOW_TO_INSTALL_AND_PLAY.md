@@ -5,7 +5,7 @@ play against the computer. It's free, and there's nothing to set up.
 
 ## Play on a PC (Windows, Mac or Linux)
 
-1. Open **https://amilapoorna.github.io/gwent/** in Chrome, Edge or Firefox.
+1. Open **https://amilapoorna.github.io/Gwent/** in Chrome, Edge or Firefox.
 2. Click **Play**.
 
 Press **F11** to play full screen.
@@ -18,7 +18,7 @@ desktop.
 
 ### Install the app (recommended)
 
-1. On your phone, open **https://github.com/AmilaPoorna/gwent/releases/latest/download/gwent.apk**.
+1. On your phone, open **https://github.com/AmilaPoorna/Gwent/releases/latest/download/gwent.apk**.
    The app downloads.
 2. Tap the downloaded file (it is also in your *Downloads*).
 3. If your phone says it can't install apps from this source, tap **Settings**, turn on **Allow from this
@@ -33,7 +33,7 @@ Needs Android 7.0 or newer.
 
 ### Or play in the browser
 
-Open **https://amilapoorna.github.io/gwent/** in Chrome and turn your phone sideways. To keep it on your home
+Open **https://amilapoorna.github.io/Gwent/** in Chrome and turn your phone sideways. To keep it on your home
 screen, open the Chrome menu and choose **Add to Home screen** (or **Install app**).
 
 ## How to play
@@ -102,7 +102,9 @@ both sides. Skellige Storm hits the ranged and siege rows. Clear Weather removes
 | Look at a card up close | Z or right-click | press and hold the card |
 | Start the match | Enter | tap **Start game** |
 | Redraw a card (start of match) | click it | tap it |
-| Play a card | click the card, then the row | tap the card, then the row |
+| Play a card | click it, then click it again or anywhere on the board | tap it, then tap it again or anywhere on the board |
+| Agile unit, Commander's Horn, Mardroeme | click the card, then the row you want | tap the card, then the row you want |
+| Decoy | click the Decoy, then the unit to take back | tap the Decoy, then the unit to take back |
 | Pass | hold Space | hold **[HOLD] Pass** |
 | Pause, music and sound, forfeit | Esc | tap **Forfeit Game**, or the Android back button in the app |
 

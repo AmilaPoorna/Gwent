@@ -119,6 +119,16 @@ function descHTML(t, extra = '') {
 }
 
 /** Overlap cards in a container so they fit maxW (as the game does when a row fills up). */
+// Replaces an element's content only when it changed, so an update doesn't rebuild every card on the board
+// (re-decoding images and cutting animations short). A card's "just appeared" class doesn't count as a change.
+function setHTML(el, html) {
+  const key = html.replace(/ new(?=[" ])/g, '');
+  if (el._html === key) return false;
+  el._html = key;
+  el.innerHTML = html;
+  return true;
+}
+
 function fan(el, cw, maxW) {
   const kids = el.children, n = kids.length;
   if (n < 2) return;
@@ -309,7 +319,6 @@ const UI = {
     const g = this.game;
     if (!g) return;
     const s = g.s, me = s.players[this.me], op = s.players[1 - this.me];
-    const tg = this.targets();
     const seen = new Set();
     const fresh = c => { seen.add(c.uid); return this.seen.has(c.uid) || (this.fly && this.fly.uid === c.uid) ? '' : ' new'; };
 
@@ -317,16 +326,9 @@ const UI = {
       for (const r of ROWS) {
         const el = $(`#row-${sk}-${r}`), row = side.rows[r];
         el.querySelector('.row-score').textContent = g.rowTotal(side, r);
-        const sp = el.querySelector('.row-special');
-        sp.innerHTML = row.special ? cardHTML(row.special, { cls: fresh(row.special) }) : '';
-        sp.classList.toggle('target', tg.specials.has(sk + ':' + r));
+        setHTML(el.querySelector('.row-special'), row.special ? cardHTML(row.special, { cls: fresh(row.special) }) : '');
         const cc = el.querySelector('.row-cards');
-        cc.innerHTML = row.cards.map(c => cardHTML(c, {
-          power: g.power(side, r, c),
-          cls: fresh(c) + (tg.cards.has(c.uid) ? ' target' : ''),
-        })).join('');
-        fan(cc, 88, 806);
-        el.classList.toggle('target', tg.rows.has(sk + ':' + r));
+        if (setHTML(cc, row.cards.map(c => cardHTML(c, { power: g.power(side, r, c), cls: fresh(c) })).join(''))) fan(cc, 88, 806);
         el.classList.remove('w-frost', 'w-fog', 'w-rain');
         for (const w of s.weather) {
           const ab = T(w.card).ability;
@@ -334,28 +336,39 @@ const UI = {
         }
       }
     }
-    const wz = $('#weather');
-    wz.innerHTML = s.weather.map(w => cardHTML(w.card, { cls: fresh(w.card) })).join('');
-    wz.classList.toggle('target', tg.weather);
+    setHTML($('#weather'), s.weather.map(w => cardHTML(w.card, { cls: fresh(w.card) })).join(''));
     this.seen = seen;
 
     const hand = $('#hand');
-    hand.innerHTML = sortCards(me.hand).map(c => cardHTML(c, { size: 'hand', cls: c.uid === this.sel ? 'sel' : '' })).join('');
-    fan(hand, 92, 940);
+    if (setHTML(hand, sortCards(me.hand).map(c => cardHTML(c, { size: 'hand' })).join(''))) fan(hand, 92, 940);
 
     for (const [sk, p] of [['op', op], ['me', me]]) {
       this.panel(sk, p);
       const lcls = p.leaderBlocked ? 'blocked' : p.leaderUsed ? 'used' : '';
-      $(`#${sk}-leader`).innerHTML = cardHTML(p.leader, { size: 'pile', cls: lcls });
+      setHTML($(`#${sk}-leader`), cardHTML(p.leader, { size: 'pile', cls: lcls }));
       const la = $(`#${sk}-leader-active`);
       la.classList.toggle('on', !p.leaderUsed && !p.leaderBlocked && !T(p.leader).passive);
       la.classList.toggle('usable', sk === 'me' && !!this.turn && g.leaderUsable(p));
-      $(`#${sk}-deck`).innerHTML = p.deck.length ? `<div class="back" style="background-image:url('${uiImg(`deck_back_${p.faction}.jpg`)}')"></div><span class="cnt">${p.deck.length}</span>` : '';
+      setHTML($(`#${sk}-deck`), p.deck.length ? `<div class="back" style="background-image:url('${uiImg(`deck_back_${p.faction}.jpg`)}')"></div><span class="cnt">${p.deck.length}</span>` : '');
       const top = p.grave[p.grave.length - 1];
-      $(`#${sk}-grave`).innerHTML = top ? cardHTML(top, { size: 'pile' }) : '';
+      setHTML($(`#${sk}-grave`), top ? cardHTML(top, { size: 'pile' }) : '');
     }
     $('#pass-hint').classList.toggle('on', !!this.turn);
+    this.renderSelection();
     if (this.fly) this.runFly();
+  },
+
+  // Selecting a card only moves highlights, so it doesn't rebuild the board
+  renderSelection() {
+    const tg = this.targets();
+    for (const el of $$('#hand .card')) el.classList.toggle('sel', +el.dataset.uid === this.sel);
+    for (const sk of ['op', 'me']) for (const r of ROWS) {
+      const el = $(`#row-${sk}-${r}`);
+      el.classList.toggle('target', tg.rows.has(sk + ':' + r));
+      el.querySelector('.row-special').classList.toggle('target', tg.specials.has(sk + ':' + r));
+    }
+    for (const el of $$('#game .row-cards .card')) el.classList.toggle('target', tg.cards.has(+el.dataset.uid));
+    $('#weather').classList.toggle('target', tg.weather);
   },
 
   panel(sk, p) {
@@ -418,14 +431,25 @@ const UI = {
     return tg;
   },
 
+  // Where the selected card goes when it has only one place to go: its row, or the whole board for weather and Scorch
+  soleTarget() {
+    const c = this.turn && this.sel && this.myHand(this.sel);
+    if (!c) return null;
+    const t = T(c);
+    if (t.type === 'weather' || t.ability === 'scorch') return {};
+    if (t.ability === 'decoy') return null;
+    const tg = this.targets(), keys = [...tg.rows, ...tg.specials];
+    return keys.length === 1 ? { row: keys[0].split(':')[1] } : null;
+  },
+
   hint(text) { $('#hint').textContent = text || ''; },
 
   selHint() {
     const c = this.sel && this.game.s.players[this.me].hand.find(x => x.uid === this.sel);
     if (!c) return this.hint('');
     const t = T(c);
-    if (t.type === 'unit') this.hint(t.abilities.includes('spy') ? "Place on your opponent's row" : t.row === 'agile' ? 'Choose the Close Combat or Ranged Combat row' : 'Choose a row');
-    else if (t.type === 'weather' || t.ability === 'scorch') this.hint('Tap the card again (or the board) to play it');
+    if (this.soleTarget()) this.hint(`${TOUCH ? 'Tap' : 'Click'} the card again or the board to play it`);
+    else if (t.type === 'unit') this.hint(t.row === 'agile' ? 'Choose the Close Combat or Ranged Combat row' : 'Choose a row');
     else if (t.ability === 'decoy') this.hint(this.targets().cards.size ? 'Choose one of your units to swap with' : 'No valid targets for Decoy');
     else this.hint('Choose a row');
   },
@@ -485,14 +509,14 @@ const UI = {
     if (handCard) {
       const uid = +handCard.dataset.uid;
       if (this.sel === uid) {
-        const t = T(this.myHand(uid));
-        if (t.type === 'weather' || t.ability === 'scorch') return this.commit({ type: 'play', uid });
+        const sole = this.soleTarget();
+        if (sole) return this.commit({ type: 'play', uid, ...sole });
         this.sel = null;
       } else {
         this.sel = uid;
         Sfx.play('ui_card');
       }
-      this.render();
+      this.renderSelection();
       this.selHint();
       this.previewSelected();
       return;
@@ -510,7 +534,10 @@ const UI = {
       if (t.ability === 'scorch' && tg.rows.has(key)) return this.commit({ type: 'play', uid: c.uid });
       if (tg.rows.has(key) || tg.specials.has(key)) return this.commit({ type: 'play', uid: c.uid, row: rowEl.dataset.row });
     }
-    if (!cardEl) { this.sel = null; this.render(); this.hint(''); this.clearPreview(); }
+    // A card with only one place to go is played wherever the board is tapped
+    const sole = this.soleTarget();
+    if (sole && (rowEl || el.closest('#weather'))) return this.commit({ type: 'play', uid: c.uid, ...sole });
+    if (!cardEl) { this.sel = null; this.renderSelection(); this.hint(''); this.clearPreview(); }
   },
 
   onKey(e) {
@@ -539,9 +566,10 @@ const UI = {
       return;
     }
     if (e.key === 'Escape') {
-      if (this.sel) { this.sel = null; this.render(); this.hint(''); this.clearPreview(); }
+      if (this.sel) { this.sel = null; this.renderSelection(); this.hint(''); this.clearPreview(); }
       else this.gameMenu();
     }
+    if (e.key === 'Enter' && this.sel) { const sole = this.soleTarget(); if (sole) this.commit({ type: 'play', uid: this.sel, ...sole }); }
     if ((e.key === 'z' || e.key === 'Z') && this.hover) this.zoomEl(this.hover);
     if (e.key === ' ' && !e.repeat && this.turn) { e.preventDefault(); this.startPassHold(); }
   },
@@ -766,12 +794,14 @@ const UI = {
     await sleep(speed(500));
     for (const c of cards) $$(`#game .card[data-uid="${c.uid}"]`).forEach(el => el.classList.add('burn'));
     await sleep(speed(700));
+    $$('#game .c-anim').forEach(el => el.remove()); // the board is no longer rebuilt on every update
   },
 
   async anim(kind, cards) {
     this.render();
     this.overlayOn(cards, `<div class="c-anim"><img src="${uiImg(`anim_${kind}.png`)}" alt=""></div>`);
     await sleep(speed(800));
+    $$('#game .c-anim').forEach(el => el.remove());
   },
 
   async showPlayed(p, card) {

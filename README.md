@@ -62,8 +62,8 @@ behind a paywall.
 
 ## Play
 
-- **In a browser, on PC or phone:** https://amilapoorna.github.io/gwent/
-- **Android app:** [gwent.apk](https://github.com/AmilaPoorna/gwent/releases/latest/download/gwent.apk)
+- **In a browser, on PC or phone:** https://amilapoorna.github.io/Gwent/
+- **Android app:** [gwent.apk](https://github.com/AmilaPoorna/Gwent/releases/latest/download/gwent.apk)
 
 Step-by-step instructions for players are in [HOW_TO_INSTALL_AND_PLAY.md](HOW_TO_INSTALL_AND_PLAY.md).
 
