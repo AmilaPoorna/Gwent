@@ -91,8 +91,8 @@ defUnits('neutral', [
   ['dandelion', 'Dandelion', 2, 'close', 'horn'],
   ['villen', 'Villentretenmerth', 7, 'close', 'scorch_c'],
   ['regis', 'Emiel Regis Rohellec Terzieff', 5, 'close', ''],
-  ['gaunter', "Gaunter O'Dimm", 2, 'siege', 'muster', 1, { group: 'gaunter' }],
-  ['gaunter_darkness', "Gaunter O'Dimm: Darkness", 4, 'ranged', 'muster', 3, { group: 'gaunter', muster: null }], // summoned by Gaunter O'Dimm, summons nothing itself
+  ['gaunter', "Gaunter O'Dimm", 2, 'siege', 'muster', 1, { muster: 'gaunter_darkness' }], // summons every Darkness card
+  ['gaunter_darkness', "Gaunter O'Dimm: Darkness", 4, 'ranged', 'muster', 3], // summons the other Darkness cards, not Gaunter
   ['olgierd', 'Olgierd von Everec', 6, 'agile', 'morale'],
   ['cow', 'Cow', 0, 'ranged', 'avenger', 1, { target: 'chort' }],
   ['chort', 'Bovine Defense Force', 8, 'close', '', 0, { token: true }],
@@ -222,7 +222,7 @@ defUnits('monsters', [
   ['kayran', 'Kayran', 8, 'agile', 'hero morale'],
   ['toad', 'Toad', 7, 'ranged', 'scorch_r'],
   ['arachas', 'Arachas', 4, 'close', 'muster', 3, { group: 'arachas' }],
-  ['arachas_behemoth', 'Arachas Behemoth', 6, 'siege', 'muster', 1, { group: 'arachas' }],
+  ['arachas_behemoth', 'Arachas Behemoth', 6, 'siege', 'muster', 1, { muster: 'arachas' }], // calls every Arachas; an Arachas calls only other Arachas
   ['botchling', 'Botchling', 4, 'close', ''],
   ['crone_brewess', 'Crone: Brewess', 6, 'close', 'muster', 1, { group: 'crone' }],
   ['crone_weavess', 'Crone: Weavess', 6, 'close', 'muster', 1, { group: 'crone' }],

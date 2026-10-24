@@ -67,7 +67,7 @@ After *Play* you see the deck builder. It is also where you choose what to play 
 | Northern Realms | Draw a card from your deck whenever you win a round. |
 | Nilfgaardian Empire | Win any round that ends in a draw. |
 | Scoia'tael | Decide who takes the first turn. |
-| Monsters | Keep one random unit on the board after each round. |
+| Monsters | Keep one random unit (never a hero) on the board after each round. |
 | Skellige | Two random units from your discard pile come back at the start of the third round. |
 
 Every faction has several leaders. Each leader has one ability you can use once per match.
@@ -79,7 +79,7 @@ Every faction has several leaders. Each leader has one ability you can use once 
 | Agile | Can go in the close combat or the ranged row. |
 | Medic | Play a unit from your discard pile (not heroes or special cards). |
 | Morale Boost | +1 strength to every other unit in its row. |
-| Muster | Brings all cards with the same name from your deck onto the board. |
+| Muster | Brings all cards with the same name from your deck and your hand onto the board. |
 | Spy | Goes on your opponent's side and counts for them, but you draw 2 cards. |
 | Tight Bond | Units with the same name in the same row double each other's strength. |
 | Scorch | Destroys the strongest unit(s) on the board. On some units it hits only one enemy row, and only if that row totals 10 or more. |
@@ -102,9 +102,7 @@ both sides. Skellige Storm hits the ranged and siege rows. Clear Weather removes
 | Look at a card up close | Z or right-click | press and hold the card |
 | Start the match | Enter | tap **Start game** |
 | Redraw a card (start of match) | click it | tap it |
-| Play a card | click it, then click it again or anywhere on the board | tap it, then tap it again or anywhere on the board |
-| Agile unit, Commander's Horn, Mardroeme | click the card, then the row you want | tap the card, then the row you want |
-| Decoy | click the Decoy, then the unit to take back | tap the Decoy, then the unit to take back |
+| Play a card | click the card, then the row | tap the card, then the row |
 | Pass | hold Space | hold **[HOLD] Pass** |
 | Pause, music and sound, forfeit | Esc | tap **Forfeit Game**, or the Android back button in the app |
 

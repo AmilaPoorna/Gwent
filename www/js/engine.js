@@ -97,8 +97,9 @@ class Game {
     const row = side.rows[rowKey];
     let v = t.strength;
     if (this.weatherOn(rowKey)) {
-      v = this.leaderAbility(side) === 'bran' ? Math.max(Math.min(v, 1), Math.floor(v / 2)) : Math.min(v, 1);
+      v = this.leaderAbility(side) === 'bran' ? Math.floor(v / 2) : Math.min(v, 1); // original: Math.max(0, floor(power / 2)), so 1 becomes 0
     }
+    if (t.abilities.includes('spy') && this.anyLeader('treacherous')) v *= 2; // doubled before Tight Bond, Morale and Horn
     if (t.abilities.includes('bond')) {
       const n = row.cards.filter(x => isUnit(x) && hasAb(x, 'bond') && T(x).group === t.group).length;
       if (n > 1) v *= n;
@@ -106,7 +107,6 @@ class Game {
     v += row.cards.filter(x => x.uid !== c.uid && hasAb(x, 'morale')).length;
     const horn = (row.special && hasAb(row.special, 'horn')) || row.cards.some(x => x.uid !== c.uid && hasAb(x, 'horn'));
     if (horn) v *= 2;
-    if (t.abilities.includes('spy') && this.anyLeader('treacherous')) v *= 2;
     return v;
   }
 
@@ -129,7 +129,7 @@ class Game {
     if (i < 0 || !p.deck.length) return;
     const [old] = p.hand.splice(i, 1);
     p.hand.splice(i, 0, p.deck.pop());
-    p.deck.splice(Math.floor(Math.random() * (p.deck.length + 1)), 0, old);
+    p.deck.unshift(old); // original (GwintDeck.readdCard): back to the bottom of the deck
   }
 
   destroy(side, r, c) {
@@ -137,12 +137,13 @@ class Game {
     const i = row.cards.findIndex(x => x.uid === c.uid);
     if (i < 0) return;
     row.cards.splice(i, 1);
-    side.grave.push(c);
+    if (!c.banish) side.grave.push(c);
     if (hasAb(c, 'avenger')) this.summonAvenger(side, c);
   }
 
   summonAvenger(side, c) {
     const tok = makeCard(T(c).target);
+    tok.banish = true; // original: BanishInsteadOfGraveyard - it vanishes instead of entering a graveyard
     side.rows[T(tok).row === 'agile' ? 'close' : T(tok).row].cards.push(tok);
   }
 
@@ -196,14 +197,17 @@ class Game {
         return p.deck.some(c => c.id === LEADER_WEATHER[L.ability]);
       case 'clear': return this.s.weather.length > 0;
       case 'horn_close': case 'horn_ranged': case 'horn_siege': return !p.rows[LEADER_ROW[L.ability]].special;
-      case 'scorch_close': case 'scorch_ranged': case 'scorch_siege': return true;
+      case 'scorch_close': case 'scorch_ranged': case 'scorch_siege': {
+        const r = LEADER_ROW[L.ability];
+        return this.rowTotal(o, r) >= 10 && o.rows[r].cards.some(c => isUnit(c) && !T(c).hero); // needs 10+ in that enemy row
+      }
       case 'emperor': return o.hand.length > 0;
-      case 'relentless': return o.grave.some(c => !T(c).hero);
-      case 'bringer': return p.grave.some(c => !T(c).hero);
+      case 'relentless': return o.grave.some(c => isUnit(c) && !T(c).hero);
+      case 'bringer': return p.grave.some(c => isUnit(c) && !T(c).hero);
       case 'destroyer': return p.hand.length >= 2 && p.deck.length > 0;
       case 'king_wild': return p.deck.some(c => T(c).type === 'weather');
-      case 'hope': return ['close', 'ranged'].some(r => p.rows[r].cards.some(c => T(c).row === 'agile'));
-      case 'crach': return true;
+      case 'hope': return this.agileMoves(p).length > 0;
+      case 'crach': return this.s.players.some(x => x.grave.some(c => isUnit(c) && !T(c).hero));
     }
     return false;
   }
@@ -213,24 +217,23 @@ class Game {
     try {
       const ps = this.s.players;
       for (const p of ps) if (T(p.leader).ability === 'whiteflame') this.opp(p).leaderBlocked = true;
-      for (const p of ps) this.draw(p, 10 + (this.leaderAbility(p) === 'daisy' ? 1 : 0));
-      this.refresh();
-      for (const p of [...ps].sort((a, b) => b.human - a.human)) await this.ctrl(p).mulligan(this, p);
-      this.refresh();
-
       for (const p of ps) {
-        if (p.leaderBlocked) await this.notify(`${this.opp(p).name}'s White Flame cancels ${p.name}'s leader ability`, 1600);
+        if (p.leaderBlocked) await this.notify(p.human ? "Opponent's leader cancels your leader's ability." : "Your leader cancels opponent's leader's ability", 1600);
       }
       const sco = ps.filter(p => p.faction === 'scoiatael');
       if (sco.length === 1) {
         const p = sco[0];
-        if (!p.human) await this.notify("Opponent's Scoia'tael faction ability triggered - your opponent decides who goes first.", 1600, 'scoiatael');
+        if (!p.human) await this.notify("Opponent used the Scoia'tael faction perk to go first.", 1600, 'scoiatael');
         this.s.first = await this.ctrl(p).chooseFirst(this, p);
       } else {
         this.s.first = Math.random() < 0.5 ? 0 : 1;
       }
       const f = ps[this.s.first];
       await this.notify(f.human ? 'You will go first' : 'Your opponent will go first', 1500, f.human ? 'me_coin' : 'op_coin');
+      for (const p of ps) this.draw(p, 10 + (this.leaderAbility(p) === 'daisy' ? 1 : 0));
+      this.refresh();
+      for (const p of [...ps].sort((a, b) => b.human - a.human)) await this.ctrl(p).mulligan(this, p);
+      this.refresh();
 
       while (!this.s.over) await this.playRound();
       if (!this.sim && this.ui) await this.ui.gameOver(this);
@@ -250,6 +253,7 @@ class Game {
     }
 
     let cur = s.first, lastActor = null;
+    s.lastToAct = s.first;
     while (!(s.players[0].passed && s.players[1].passed)) {
       this.check();
       const p = s.players[cur];
@@ -270,6 +274,14 @@ class Game {
           const action = await this.ctrl(p).takeTurn(this, p);
           this.check();
           await this.applyAction(p, action);
+          s.lastToAct = cur;
+          // original (BasePlayerController.currentRoundStatus): no cards left and no usable leader = passed right now
+          if (!p.passed && p.hand.length === 0 && !this.leaderUsable(p)) {
+            p.passed = true;
+            this.refresh();
+            this.sfx('pass');
+            await this.notify(p.human ? 'Round passed' : 'Your opponent has passed', 1100, 'round_passed');
+          }
         }
       }
       if (!s.players[1 - cur].passed) cur = 1 - cur;
@@ -352,8 +364,16 @@ class Game {
       p.grave.push(card);
       return;
     }
-    if (this.s.weather.some(w => w.card.id === card.id)) p.grave.push(card);
-    else this.s.weather.push({ card, owner: p.id });
+    const ab = T(card).ability, W = this.s.weather;
+    if (ab === 'storm') {
+      // the new Storm stays; an older Storm, Fog or Rain goes to its owner's graveyard (it covers the same rows)
+      for (const w of [...W]) if (['storm', 'fog', 'rain'].includes(T(w.card).ability)) { W.splice(W.indexOf(w), 1); this.s.players[w.owner].grave.push(w.card); }
+      W.push({ card, owner: p.id });
+      return;
+    }
+    // Frost / Fog / Rain: discarded if a card in play already covers its row (the same card, or a Storm)
+    if (W.some(w => WEATHER_ROWS[T(w.card).ability].includes(WEATHER_ROWS[ab][0]))) p.grave.push(card);
+    else W.push({ card, owner: p.id });
   }
 
   async placeUnit(p, c, r, opts = {}) {
@@ -378,33 +398,48 @@ class Game {
     if (t.abilities.includes('scorch_r')) await this.rowScorch(this.opp(p), 'ranged');
     if (t.abilities.includes('scorch_s')) await this.rowScorch(this.opp(p), 'siege');
     if (t.abilities.includes('scorch')) await this.scorch();
-    if (t.abilities.includes('medic')) await this.medic(p);
+    if (t.abilities.includes('medic')) await this.medic(p, c);
     this.refresh();
   }
 
   async muster(p, c) {
     const g = T(c).muster !== undefined ? T(c).muster : T(c).group; // muster: null shows the ability but summons nothing
-    const pulled = p.deck.filter(x => x.uid !== c.uid && isUnit(x) && T(x).group === g);
-    if (!pulled.length) return;
+    const same = x => x.uid !== c.uid && isUnit(x) && T(x).group === g;
+    const fromDeck = p.deck.filter(same), fromHand = p.hand.filter(same); // deck AND hand (CardInstance.summonFXEnded)
+    if (!fromDeck.length && !fromHand.length) return;
     this.sfx('muster');
     await this.anim('muster', [c]);
-    p.deck = p.deck.filter(x => !pulled.includes(x));
-    for (const x of pulled) await this.placeUnit(p, x, this.unitRows(x)[0], { noMuster: true });
+    p.deck = p.deck.filter(x => !fromDeck.includes(x));
+    p.hand = p.hand.filter(x => !fromHand.includes(x));
+    for (const x of [...fromDeck, ...fromHand]) await this.placeUnit(p, x, this.unitRows(x)[0], { noMuster: true });
   }
 
-  async medic(p) {
+  async medic(p, medicCard) {
     const options = p.grave.filter(c => isUnit(c) && !T(c).hero);
     if (!options.length) return;
     this.sfx('medic');
     let pick;
-    if (this.anyLeader('invader')) pick = pickRandom(options);
+    if (this.anyLeader('invader') && !T(medicCard).hero) pick = pickRandom(options); // hero medics (Yennefer, Menno) still let you choose
     else pick = await this.ctrl(p).chooseCard(this, p, options, 'Choose a card to restore', { purpose: 'medic' });
     this.check();
     if (!pick) return;
     p.grave.splice(p.grave.findIndex(x => x.uid === pick.uid), 1);
     const rows = this.unitRows(pick);
-    const r = rows.length > 1 ? await this.ctrl(p).chooseRow(this, p, pick, rows) : rows[0];
+    const r = rows.length > 1 ? this.bestRow(p, pick, rows) : rows[0]; // not the player's choice in the original
     await this.placeUnit(p, pick, r);
+  }
+
+  /** Row where a unit would be strongest right now (random among equals), as CardInstance.recalculatePowerPotential decides for revived cards. */
+  bestRow(p, c, rows) {
+    const side = hasAb(c, 'spy') ? this.opp(p) : p;
+    let best = [], bv = -1;
+    for (const r of rows) {
+      side.rows[r].cards.push(c);
+      const v = this.power(side, r, c);
+      side.rows[r].cards.pop();
+      if (v > bv) { bv = v; best = [r]; } else if (v === bv) best.push(r);
+    }
+    return pickRandom(best);
   }
 
   async scorch() {
@@ -413,8 +448,7 @@ class Game {
       if (isUnit(c) && !T(c).hero) all.push({ side, r, c, v: this.power(side, r, c) });
     }
     if (!all.length) return;
-    const max = Math.max(...all.map(x => x.v));
-    if (max <= 0) return;
+    const max = Math.max(...all.map(x => x.v)); // original starts from 0 with >=, so 0-strength units die when nothing is stronger
     const victims = all.filter(x => x.v === max);
     this.sfx('scorch');
     await this.fx('scorch', victims.map(x => x.c));
@@ -456,14 +490,13 @@ class Game {
         await ctrl.reveal(this, p, cards, "Your opponent's hand (3 random cards)");
         break;
       }
-      case 'relentless': {
-        const c = await ctrl.chooseCard(this, p, o.grave.filter(x => !T(x).hero), "Draw a card from your opponent's discard pile", { purpose: 'take' });
-        if (c) p.hand.push(takeFrom(o.grave, c));
-        break;
-      }
-      case 'bringer': {
-        const c = await ctrl.chooseCard(this, p, p.grave.filter(x => !T(x).hero), 'Restore a card from your discard pile to your hand', { purpose: 'take' });
-        if (c) p.hand.push(takeFrom(p.grave, c));
+      case 'relentless': case 'bringer': {
+        // only non-hero units; with Emhyr Invader of the North in play the card is random, a single candidate is taken without asking
+        const from = L.ability === 'relentless' ? o : p;
+        const list = from.grave.filter(x => isUnit(x) && !T(x).hero);
+        const c = this.anyLeader('invader') ? pickRandom(list) : list.length === 1 ? list[0]
+          : await ctrl.chooseCard(this, p, list, L.ability === 'relentless' ? "Draw a card from your opponent's discard pile" : 'Restore a card from your discard pile to your hand', { purpose: 'take' });
+        if (c) p.hand.push(takeFrom(from.grave, c));
         break;
       }
       case 'destroyer': {
@@ -484,26 +517,44 @@ class Game {
       }
       case 'hope': this.moveAgile(p); break;
       case 'crach':
+        // only non-hero units go back (each into its owner's deck, at random places); specials, weather and heroes stay in the graveyard
         for (const x of this.s.players) {
-          x.deck.push(...x.grave);
-          x.grave = [];
-          shuffle(x.deck);
+          const back = x.grave.filter(c => isUnit(c) && !T(c).hero);
+          x.grave = x.grave.filter(c => !back.includes(c));
+          for (const c of back) x.deck.splice(Math.floor(Math.random() * (x.deck.length + 1)), 0, c);
         }
         break;
     }
     this.check();
   }
 
-  moveAgile(p) {
-    for (const r of ['close', 'ranged']) {
-      for (const c of [...p.rows[r].cards]) {
-        if (T(c).row !== 'agile') continue;
+  /** Agile units (never heroes) that would be stronger in the other row. The original compares the unit's own strength, ranged row first. */
+  agileMoves(p) {
+    const moves = [];
+    for (const r of ['ranged', 'close']) {
+      for (const c of p.rows[r].cards) {
+        if (T(c).row !== 'agile' || T(c).hero) continue;
         const other = r === 'close' ? 'ranged' : 'close';
-        const before = this.total(p);
-        const from = p.rows[r].cards, to = p.rows[other].cards;
-        from.splice(from.indexOf(c), 1);
+        const now = this.power(p, r, c);
+        p.rows[other].cards.push(c);
+        const then = this.power(p, other, c);
+        p.rows[other].cards.pop();
+        if (then > now) moves.push({ c, from: r, to: other });
+      }
+    }
+    return moves;
+  }
+
+  moveAgile(p) {
+    for (const r of ['ranged', 'close']) {
+      for (const c of [...p.rows[r].cards]) {
+        if (T(c).row !== 'agile' || T(c).hero) continue;
+        const other = r === 'close' ? 'ranged' : 'close';
+        const now = this.power(p, r, c);
+        const from = p.rows[r].cards, to = p.rows[other].cards, i = from.indexOf(c);
+        from.splice(i, 1);
         to.push(c);
-        if (this.total(p) <= before) { to.pop(); from.push(c); }
+        if (this.power(p, other, c) <= now) { to.pop(); from.splice(i, 0, c); }
       }
     }
   }
@@ -511,11 +562,10 @@ class Game {
   async skelligeAbility(p) {
     const units = shuffle(p.grave.filter(c => isUnit(c) && !T(c).hero)).slice(0, 2);
     if (!units.length) return;
-    await this.notify('Skellige faction ability triggered - 2 random cards from the graveyard are placed on the battlefield.', 1600, 'skellige');
-    for (const c of units) {
-      p.grave.splice(p.grave.indexOf(c), 1);
-      p.rows[this.unitRows(c)[0]].cards.push(c);
-    }
+    await this.notify(p.human ? 'Skellige Ability Triggered!' : 'Opponent Skellige Ability Triggered!', 1600, 'skellige');
+    for (const c of units) p.grave.splice(p.grave.indexOf(c), 1);
+    // placed like any revived card, so spies change sides, Muster / Medic / Scorch / Morale / Bond / Mardroeme all trigger
+    for (const c of units) await this.placeUnit(p, c, this.unitRows(c)[0]);
     this.refresh();
   }
 
@@ -528,7 +578,7 @@ class Game {
       const ng = s.players.filter(p => p.faction === 'nilfgaard');
       if (ng.length === 1) {
         winner = ng[0];
-        await this.notify('Nilfgaardian Empire faction ability triggered - Nilfgaard wins the tie.', 1600, 'draw_round');
+        await this.notify('Nilfgaard faction ability triggered - Nilfgaard wins the tie.', 1600, 'draw_round');
       }
     }
     s.history.push({ scores: [ta, tb], winner: winner ? winner.id : null });
@@ -544,7 +594,7 @@ class Game {
     const gameOver = a.gems <= 0 || b.gems <= 0;
     if (!gameOver && winner && winner.faction === 'realms' && winner.deck.length) {
       this.draw(winner, 1);
-      await this.notify(`Northern Realms faction ability triggered - ${winner.name} draws an additional card.`, 1600, 'north');
+      await this.notify('Northern Realms faction ability triggered - North draws an additional card.', 1600, 'north');
     }
 
     // Monsters keep one random unit card on the battlefield
@@ -552,10 +602,10 @@ class Game {
     if (!gameOver) {
       for (const p of s.players) {
         if (p.faction !== 'monsters') continue;
-        const units = ROWS.flatMap(r => p.rows[r].cards).filter(isUnit);
+        const units = ROWS.flatMap(r => p.rows[r].cards).filter(c => isUnit(c) && !T(c).hero);
         if (units.length) {
           keep.add(pickRandom(units).uid);
-          await this.notify('Monsters faction ability triggered - one randomly-chosen Unit Card stays on the board.', 1600, 'monsters');
+          await this.notify('Monsters faction ability triggered - one randomly-chosen Monster Unit Card stays on the board', 1600, 'monsters');
         }
       }
     }
@@ -567,7 +617,7 @@ class Game {
         const stay = [];
         for (const c of row.cards) {
           if (keep.has(c.uid)) { stay.push(c); continue; }
-          p.grave.push(c);
+          if (!c.banish) p.grave.push(c);
           if (hasAb(c, 'avenger')) avengers.push([p, c]);
         }
         row.cards = stay;
@@ -584,7 +634,7 @@ class Game {
       s.over = true;
       s.winner = a.gems > 0 ? 0 : b.gems > 0 ? 1 : null;
     } else {
-      s.first = winner ? winner.id : 1 - s.first;
+      s.first = winner ? winner.id : (s.lastToAct ?? s.first); // a drawn round: the player who acted last starts again
     }
     this.refresh();
   }

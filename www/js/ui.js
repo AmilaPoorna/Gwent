@@ -431,25 +431,14 @@ const UI = {
     return tg;
   },
 
-  // Where the selected card goes when it has only one place to go: its row, or the whole board for weather and Scorch
-  soleTarget() {
-    const c = this.turn && this.sel && this.myHand(this.sel);
-    if (!c) return null;
-    const t = T(c);
-    if (t.type === 'weather' || t.ability === 'scorch') return {};
-    if (t.ability === 'decoy') return null;
-    const tg = this.targets(), keys = [...tg.rows, ...tg.specials];
-    return keys.length === 1 ? { row: keys[0].split(':')[1] } : null;
-  },
-
   hint(text) { $('#hint').textContent = text || ''; },
 
   selHint() {
     const c = this.sel && this.game.s.players[this.me].hand.find(x => x.uid === this.sel);
     if (!c) return this.hint('');
     const t = T(c);
-    if (this.soleTarget()) this.hint(`${TOUCH ? 'Tap' : 'Click'} the card again or the board to play it`);
-    else if (t.type === 'unit') this.hint(t.row === 'agile' ? 'Choose the Close Combat or Ranged Combat row' : 'Choose a row');
+    if (t.type === 'unit') this.hint(t.abilities.includes('spy') ? "Place on your opponent's row" : t.row === 'agile' ? 'Choose the Close Combat or Ranged Combat row' : 'Choose a row');
+    else if (t.type === 'weather' || t.ability === 'scorch') this.hint('Tap the card again (or the board) to play it');
     else if (t.ability === 'decoy') this.hint(this.targets().cards.size ? 'Choose one of your units to swap with' : 'No valid targets for Decoy');
     else this.hint('Choose a row');
   },
@@ -509,8 +498,8 @@ const UI = {
     if (handCard) {
       const uid = +handCard.dataset.uid;
       if (this.sel === uid) {
-        const sole = this.soleTarget();
-        if (sole) return this.commit({ type: 'play', uid, ...sole });
+        const t = T(this.myHand(uid));
+        if (t.type === 'weather' || t.ability === 'scorch') return this.commit({ type: 'play', uid });
         this.sel = null;
       } else {
         this.sel = uid;
@@ -534,9 +523,6 @@ const UI = {
       if (t.ability === 'scorch' && tg.rows.has(key)) return this.commit({ type: 'play', uid: c.uid });
       if (tg.rows.has(key) || tg.specials.has(key)) return this.commit({ type: 'play', uid: c.uid, row: rowEl.dataset.row });
     }
-    // A card with only one place to go is played wherever the board is tapped
-    const sole = this.soleTarget();
-    if (sole && (rowEl || el.closest('#weather'))) return this.commit({ type: 'play', uid: c.uid, ...sole });
     if (!cardEl) { this.sel = null; this.renderSelection(); this.hint(''); this.clearPreview(); }
   },
 
@@ -569,7 +555,6 @@ const UI = {
       if (this.sel) { this.sel = null; this.renderSelection(); this.hint(''); this.clearPreview(); }
       else this.gameMenu();
     }
-    if (e.key === 'Enter' && this.sel) { const sole = this.soleTarget(); if (sole) this.commit({ type: 'play', uid: this.sel, ...sole }); }
     if ((e.key === 'z' || e.key === 'Z') && this.hover) this.zoomEl(this.hover);
     if (e.key === ' ' && !e.repeat && this.turn) { e.preventDefault(); this.startPassHold(); }
   },

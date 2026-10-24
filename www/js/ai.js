@@ -42,13 +42,7 @@ const AI = {
 class AIController {
   constructor() { this.human = false; }
 
-  async mulligan(game, p) {
-    for (let i = 0; i < 2; i++) {
-      const c = this.mulliganPick(p);
-      if (!c) break;
-      game.redraw(p, c.uid);
-    }
-  }
+  async mulligan(game, p) {} // original: AIPlayerController has no opening exchange (only the player redraws)
 
   mulliganPick(p) {
     const seen = new Set();
@@ -62,7 +56,7 @@ class AIController {
     return null;
   }
 
-  async chooseFirst(game, p) { return 1 - p.id; } // going second is the advantage
+  async chooseFirst(game, p) { return p.id; } // original: the computer's Scoia'tael perk always makes it start
 
   async chooseCard(game, p, cards, title, opts = {}) {
     if (!cards.length) return null;
