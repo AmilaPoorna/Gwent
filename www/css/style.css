@@ -228,7 +228,8 @@ kbd {
 .ch-band { position: absolute; left: 0; right: 0; top: 138px; height: 66px; background: rgba(0, 0, 0, .86); display: flex; align-items: center; justify-content: center; }
 .ch-title { font-size: 32px; color: var(--gold); }
 .ch-carousel { position: absolute; left: 0; right: 0; top: 222px; height: 600px; touch-action: none; }
-.ch-carousel .slot { position: absolute; top: 0; left: 50%; transform-origin: center top; transition: transform .22s, filter .22s; cursor: pointer; }
+.ch-carousel .slot { position: absolute; top: 0; left: 50%; transform-origin: center top; transition: transform .3s cubic-bezier(.25, .8, .3, 1), filter .3s, opacity .3s; will-change: transform, opacity; cursor: pointer; }
+.ch-carousel .slot.far { opacity: 0; pointer-events: none; }
 .ch-carousel .slot.center .card { box-shadow: 0 0 0 3px var(--orange), 0 0 30px rgba(240, 162, 58, .7); }
 .ch-carousel .slot:not(.center) { filter: brightness(.85); }
 .ch-desc { left: 678px; top: 836px; width: 564px; min-height: 140px; }

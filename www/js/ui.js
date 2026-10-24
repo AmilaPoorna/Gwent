@@ -626,7 +626,10 @@ const UI = {
     ch.querySelector('.ch-band').style.display = title ? '' : 'none';
     ch.querySelector('.ch-title').textContent = title;
     ch.querySelector('.ch-hints').innerHTML = hintsHTML(hints);
-    this.ch = { cards, idx: Math.max(0, Math.min(idx, cards.length - 1)), onPick, acts, extra, descFor };
+    // reopened while showing (the next redraw): keep the cards already on screen so only the new one appears
+    const slots = this.ch && ch.classList.contains('show') ? this.ch.slots : new Map();
+    if (!slots.size) ch.querySelector('.ch-carousel').innerHTML = '';
+    this.ch = { cards, idx: Math.max(0, Math.min(idx, cards.length - 1)), onPick, acts, extra, descFor, slots };
     this.renderCarousel();
     ch.classList.add('show');
     $('#stage').classList.add('overlay-open');
@@ -634,17 +637,29 @@ const UI = {
   },
 
   renderCarousel() {
-    const { cards, idx } = this.ch;
+    const { cards, idx, slots } = this.ch;
     const wrap = $('#chooser .ch-carousel');
-    const X = [0, 310, 618], S = [1, 0.832, 0.689];
-    let html = '';
-    for (let off = -2; off <= 2; off++) {
-      const c = cards[idx + off];
-      if (!c) continue;
-      const a = Math.abs(off);
-      html += `<div class="slot${off === 0 ? ' center' : ''}" data-off="${off}" style="transform: translateX(calc(-50% + ${Math.sign(off) * X[a]}px)) scale(${S[a]}); z-index: ${10 - a}">${cardHTML(c, { size: 'md' })}</div>`;
-    }
-    wrap.innerHTML = html;
+    // Each card keeps its element while it is near the centre (beyond ±2 it is invisible), so moving the carousel
+    // slides the cards along instead of redrawing them in their new places
+    const X = [0, 310, 618, 860, 1040], S = [1, 0.832, 0.689, 0.6, 0.55];
+    const shown = new Set();
+    cards.forEach((c, i) => {
+      const off = i - idx, a = Math.abs(off), key = c.uid ?? 'i' + i;
+      if (a > 4) return;
+      shown.add(key);
+      let el = slots.get(key);
+      if (!el) {
+        el = document.createElement('div');
+        el.innerHTML = cardHTML(c, { size: 'md' });
+        slots.set(key, el);
+        wrap.append(el);
+      }
+      el.className = 'slot' + (off === 0 ? ' center' : '') + (a > 2 ? ' far' : '');
+      el.dataset.off = off;
+      el.style.transform = `translateX(calc(-50% + ${Math.sign(off) * X[a]}px)) scale(${S[a]})`;
+      el.style.zIndex = 10 - a;
+    });
+    for (const [key, el] of slots) if (!shown.has(key)) { el.remove(); slots.delete(key); }
     const t = CARDS[cards[idx].id];
     const d = $('#chooser .ch-desc');
     d.innerHTML = this.ch.descFor ? this.ch.descFor(cards[idx]) : descHTML(t, this.ch.extra);
