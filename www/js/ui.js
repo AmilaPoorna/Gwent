@@ -214,7 +214,7 @@ const UI = {
     $('#stage').style.transform = `translate(${(w - 1920 * s) / 2}px, ${(h - 1080 * s) / 2}px) scale(${s})`;
   },
 
-  show(id) { $$('.screen').forEach(x => x.classList.toggle('active', x.id === id)); },
+  show(id) { $$('.screen').forEach(x => x.classList.toggle('active', x.id === id)); if (this.onShow) this.onShow(id); },
   sfx(name) { Sfx.play(name); },
 
   toast(text) {
@@ -768,15 +768,15 @@ const UI = {
     if (!this.game || this.ch) return;
     for (;;) {
       const i = await this.dialog('Game paused', ['Resume', 'How to Play', `Music: ${Settings.music ? 'On' : 'Off'}`, `Sound: ${Settings.sound ? 'On' : 'Off'}`,
-        'Restart Match', 'Change Deck', 'Quit to Menu', 'Forfeit Game'], ['Esc']);
+        'Restart Match', 'Change Deck', 'Forfeit Game', 'Quit to Menu'], ['Esc']);
       if (i === 1) { await this.help(); continue; }
       if (i === 2) { Music.set(!Settings.music); continue; }
       if (i === 3) { Settings.sound = !Settings.sound; saveSettings(); continue; }
       const leave = {
         4: ['restart', 'Restart the match?<small>You play again with the same deck, against a new opponent.</small>'],
         5: ['deck', 'Leave the match and change your deck?<small>This match ends.</small>'],
-        6: ['menu', 'Quit to the main menu?<small>This match ends.</small>'],
-        7: ['forfeit', 'Forfeit this game?<small>The match will count as a loss.</small>'],
+        6: ['forfeit', 'Forfeit this game?<small>The match will count as a loss.</small>'],
+        7: ['menu', 'Quit to the main menu?<small>This match ends.</small>'],
       }[i];
       if (leave) {
         if (await this.dialog(leave[1], ['Yes', 'Cancel'], ['Enter', 'Esc']) !== 0) continue;

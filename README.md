@@ -6,7 +6,7 @@ an app, and can be packaged as an Android APK.
 
 ## How it works (same flow as the game)
 
-1. **Play**: the home screen has only *Play* and a small *How to Play* link.
+1. **Play**: the home screen has only *Play*, a small *How to Play* link and the *Music* and *Sound* switches.
 2. **Deck builder**: this is TW3's pre-match screen. Your deck for each faction is saved automatically, every
    time you change it, so next time you only edit it.
    - Switch faction with **Q / E** (LB / RB in the game) or by clicking the faction names.
@@ -19,8 +19,8 @@ an app, and can be packaged as an Android APK.
 3. **Match**: on the original board, with TW3's notifications, ability animations, sound effects and music.
    - Redraw up to 2 cards, then play.
    - **Hold Space** (or hold the *[HOLD] Pass* button) to pass.
-   - **Esc** (or *Menu*) opens the menu: *How to Play*, music and sound, *Restart Match*, *Change Deck*, *Quit to Menu*
-     and *Forfeit Game* (shown as a defeat).
+   - **Esc** (or *Menu*) opens the menu: *How to Play*, music and sound, *Restart Match*, *Change Deck*, *Forfeit Game*
+     (shown as a defeat) and *Quit to Menu*.
 4. **Results**: Victory, Defeat or Draw with the round scores. **Enter** plays again, **Esc** goes back to the deck.
 
 ## Rules and content
@@ -33,8 +33,6 @@ an app, and can be packaged as an Android APK.
 - **Special and weather cards:** all of them.
 - **Strength order:** as in TW3: base → weather → Tight Bond → Morale → Horn. Heroes are never affected.
 - **Next-gen update:** the Roach card is included.
-- **Card art:** the ten neutral cards that have DLC art (Geralt, Ciri, Yennefer, Triss, Avallac'h, Vesemir, Zoltan,
-  Dandelion, Villentretenmerth, Regis) show it, as the current game does with the free DLCs installed.
 
 ## Original assets and where they came from
 
@@ -42,7 +40,7 @@ All graphics, sounds and music are the original *Witcher 3* Gwent assets, in `ww
 
 | folder | contents | source |
 |---|---|---|
-| `cards/lg` | full card faces (previews, zoom, carousels) | [asundr/gwent-classic](https://github.com/asundr/gwent-classic), checked against [matt77hias/Gwent](https://github.com/matt77hias/Gwent); the DLC art of ten neutral cards from matt77hias/Gwent (`tools/apply_dlc_art.py`) |
+| `cards/lg` | full card faces (previews, zoom, carousels) | [asundr/gwent-classic](https://github.com/asundr/gwent-classic), checked against [matt77hias/Gwent](https://github.com/matt77hias/Gwent) |
 | `cards/sm` | art-only textures for the board and hand, one per art variant | same |
 | `cards/db` | deck-builder faces (blank parchment, name drawn in the game font) | made from `cards/lg` by `tools/make_deck_faces.py` |
 | `ui` | board, notification emblems, gems, score tokens, icons, weather overlays, shields, card backs, end banners | gwent-classic |

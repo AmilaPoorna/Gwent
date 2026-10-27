@@ -33,6 +33,15 @@ $('#btn-play').onclick = () => {
   DeckBuilder.open();
 };
 $('#btn-help').onclick = () => UI.help();
+// Music and sound can also be switched on the home screen (the labels follow changes made in the game menu)
+const menuSettings = () => {
+  $('#btn-music').textContent = `Music: ${Settings.music ? 'On' : 'Off'}`;
+  $('#btn-sound').textContent = `Sound: ${Settings.sound ? 'On' : 'Off'}`;
+};
+$('#btn-music').onclick = () => { Music.set(!Settings.music); menuSettings(); };
+$('#btn-sound').onclick = () => { Settings.sound = !Settings.sound; saveSettings(); Sfx.play('ui_card'); menuSettings(); };
+UI.onShow = id => { if (id === 'menu') menuSettings(); };
+menuSettings();
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && $('#menu').classList.contains('active')) $('#btn-play').click();
 });

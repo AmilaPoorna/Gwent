@@ -40,6 +40,7 @@ screen, open the Chrome menu and choose **Add to Home screen** (or **Install app
 ## How to play
 
 The game has its own **How to Play** screen: on the home screen under **Play**, and in the menu during a match.
+Music and sound can be switched on or off on the home screen too.
 
 ### The game in short
 
@@ -107,7 +108,7 @@ both sides. Skellige Storm hits the ranged and siege rows. Clear Weather removes
 | Redraw a card (start of match) | click it | tap it |
 | Play a card | click the card, then the row | tap the card, then the row |
 | Pass | hold Space | hold **[HOLD] Pass** |
-| Menu: How to Play, music, sound, restart, change deck, quit, forfeit | Esc | tap **Menu**, or the Android back button in the app |
+| Menu: How to Play, music, sound, restart, change deck, forfeit, quit | Esc | tap **Menu**, or the Android back button in the app |
 
 Your decks and settings are saved on the device you play on. A different browser or phone starts with the
 starter decks.
