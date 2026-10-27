@@ -24,7 +24,7 @@ DeckBuilder.init();
 DeckBuilder.onStart = deck => startMatch(deck);
 DeckBuilder.onClose = () => UI.show('menu');
 UI.onGameOver = act => { if (act === 'again') startMatch(DeckBuilder.current()); else DeckBuilder.open(DeckBuilder.faction); };
-UI.onForfeit = () => DeckBuilder.open(DeckBuilder.faction);
+UI.onLeave = act => { if (act === 'restart') startMatch(DeckBuilder.current()); else if (act === 'deck') DeckBuilder.open(DeckBuilder.faction); else UI.show('menu'); };
 
 $('#btn-play').onclick = () => {
   enterFullscreen();
@@ -32,6 +32,7 @@ $('#btn-play').onclick = () => {
   Sfx.play('menu_opening');
   DeckBuilder.open();
 };
+$('#btn-help').onclick = () => UI.help();
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && $('#menu').classList.contains('active')) $('#btn-play').click();
 });
@@ -39,7 +40,7 @@ document.addEventListener('keydown', e => {
 // Android back button: works like Esc (closes overlays, opens the pause menu, leaves the deck builder); on the home screen it exits
 if (NATIVE && Capacitor.Plugins.App) {
   Capacitor.Plugins.App.addListener('backButton', () => {
-    if ($('#menu').classList.contains('active')) Capacitor.Plugins.App.exitApp();
+    if ($('#menu').classList.contains('active') && !$('#help').classList.contains('show')) Capacitor.Plugins.App.exitApp();
     else document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true }));
   });
 }

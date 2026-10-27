@@ -181,7 +181,7 @@ const DeckBuilder = {
         item.innerHTML = `${cardHTML({ id: t.id }, { size: 'db' })}<span class="db-count"></span>`;
       }
       const badge = item.querySelector('.db-count'), n = String(countFn(t.id));
-      if (badge.textContent !== n || !badge.firstChild) badge.replaceChildren(document.createElement('i'), n);
+      if (badge.textContent !== n || !badge.firstChild) { badge.textContent = ''; badge.append(document.createElement('i'), n); }
       if (el.children[i] !== item) el.insertBefore(item, el.children[i] || null);
     });
     for (const x of old.values()) x.remove();

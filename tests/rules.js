@@ -78,7 +78,7 @@ const code = `
   // Geralt (next-gen) musters Roach from the deck
   { const g = game('foltest_lord', 'foltest_lord', ['roach', 'ciri']);
     await play(g, 0, hand(g, 0, 'geralt'), 'close');
-    eq('geralt musters roach', g.s.players[0].rows.close.cards.map(c => c.id), ['geralt', 'roach']); }
+    eq('geralt summons nothing (only the GOG-reward version musters Roach)', g.s.players[0].rows.close.cards.map(c => c.id), ['geralt']); }
   // Gaunter O'Dimm summons the Darkness cards; a Darkness card summons nothing
   { const g = game('foltest_lord', 'foltest_lord', ['gaunter_darkness', 'gaunter_darkness', 'gaunter_darkness']);
     await play(g, 0, hand(g, 0, 'gaunter'), 'siege');

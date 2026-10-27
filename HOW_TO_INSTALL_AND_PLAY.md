@@ -27,7 +27,8 @@ desktop.
    **Install anyway**. The app is not from the Play Store, which is why the warning appears.
 5. Open **Gwent** from your home screen. It runs full screen, in landscape.
 
-Needs Android 7.0 or newer.
+Needs Android 7.0 or newer. If Gwent says it needs a newer web engine, update **Android System WebView** and
+**Chrome** from the Play Store.
 
 **Updating:** download *gwent.apk* again from the same link and install it over the old one. Your decks are kept.
 
@@ -37,6 +38,8 @@ Open **https://amilapoorna.github.io/Gwent/** in Chrome and turn your phone side
 screen, open the Chrome menu and choose **Add to Home screen** (or **Install app**).
 
 ## How to play
+
+The game has its own **How to Play** screen: on the home screen under **Play**, and in the menu during a match.
 
 ### The game in short
 
@@ -104,7 +107,7 @@ both sides. Skellige Storm hits the ranged and siege rows. Clear Weather removes
 | Redraw a card (start of match) | click it | tap it |
 | Play a card | click the card, then the row | tap the card, then the row |
 | Pass | hold Space | hold **[HOLD] Pass** |
-| Pause, music and sound, forfeit | Esc | tap **Forfeit Game**, or the Android back button in the app |
+| Menu: How to Play, music, sound, restart, change deck, quit, forfeit | Esc | tap **Menu**, or the Android back button in the app |
 
 Your decks and settings are saved on the device you play on. A different browser or phone starts with the
 starter decks.

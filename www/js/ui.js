@@ -196,6 +196,7 @@ const UI = {
     $('#chooser .ch-hints').addEventListener('click', e => { const b = e.target.closest('[data-act]'); if (b && this.ch?.acts[b.dataset.act]) this.ch.acts[b.dataset.act](); });
     $('#game-hints').addEventListener('click', e => { const b = e.target.closest('[data-act]'); if (!b) return; if (b.dataset.act === 'menu') this.gameMenu(); if (b.dataset.act === 'zoom' && this.hover) this.zoomEl(this.hover); });
     $('#gameover .go-hints').addEventListener('click', e => { const b = e.target.closest('[data-act]'); if (b) this.gameOverAct(b.dataset.act); });
+    $('#help').addEventListener('click', e => { if (e.target.closest('[data-act=close]') && this.closeHelp) this.closeHelp(); });
     document.addEventListener('keydown', e => this.onKey(e));
     document.addEventListener('keyup', e => { if (e.key === ' ') this.cancelPassHold(); });
   },
@@ -279,7 +280,7 @@ const UI = {
     const game = new Game(setup, [new HumanController(this), new AIController()], this);
     this.preload(game);
     Object.assign(this, { game, me: 0, sel: null, turn: null, rowPick: null, seen: new Set() });
-    $('#game-hints').innerHTML = hintsHTML([{ act: 'zoom', key: 'Z', label: 'Zoom' }, { act: 'menu', key: 'Esc', label: 'Forfeit Game' }]);
+    $('#game-hints').innerHTML = hintsHTML([{ act: 'zoom', key: 'Z', label: 'Zoom' }, { act: 'menu', key: 'Esc', label: 'Menu' }]);
     this.show('game');
     this.preview(null);
     this.render();
@@ -527,6 +528,11 @@ const UI = {
   },
 
   onKey(e) {
+    if ($('#help').classList.contains('show')) {
+      e.stopImmediatePropagation(); // How to Play owns the keyboard
+      if (e.key === 'Escape' || e.key === 'Enter') this.closeHelp();
+      return;
+    }
     if ($('#dialog').classList.contains('show') || (this.ch && $('#chooser').classList.contains('show'))) {
       e.stopImmediatePropagation(); // an open overlay owns the keyboard
     }
@@ -761,15 +767,42 @@ const UI = {
   async gameMenu() {
     if (!this.game || this.ch) return;
     for (;;) {
-      const i = await this.dialog('Game paused', ['Resume', `Music: ${Settings.music ? 'On' : 'Off'}`, `Sound: ${Settings.sound ? 'On' : 'Off'}`, 'Forfeit Game'], ['Esc']);
-      if (i === 1) { Music.set(!Settings.music); continue; }
-      if (i === 2) { Settings.sound = !Settings.sound; saveSettings(); continue; }
-      if (i === 3) {
-        const k = await this.dialog('Forfeit this game?<small>The match will count as a loss.</small>', ['Forfeit', 'Cancel'], ['Enter', 'Esc']);
-        if (k === 0) { this.abort(); if (this.onForfeit) this.onForfeit(); }
+      const i = await this.dialog('Game paused', ['Resume', 'How to Play', `Music: ${Settings.music ? 'On' : 'Off'}`, `Sound: ${Settings.sound ? 'On' : 'Off'}`,
+        'Restart Match', 'Change Deck', 'Quit to Menu', 'Forfeit Game'], ['Esc']);
+      if (i === 1) { await this.help(); continue; }
+      if (i === 2) { Music.set(!Settings.music); continue; }
+      if (i === 3) { Settings.sound = !Settings.sound; saveSettings(); continue; }
+      const leave = {
+        4: ['restart', 'Restart the match?<small>You play again with the same deck, against a new opponent.</small>'],
+        5: ['deck', 'Leave the match and change your deck?<small>This match ends.</small>'],
+        6: ['menu', 'Quit to the main menu?<small>This match ends.</small>'],
+        7: ['forfeit', 'Forfeit this game?<small>The match will count as a loss.</small>'],
+      }[i];
+      if (leave) {
+        if (await this.dialog(leave[1], ['Yes', 'Cancel'], ['Enter', 'Esc']) !== 0) continue;
+        const g = this.game;
+        this.abort();
+        if (leave[0] === 'forfeit') { g.s.over = true; g.s.winner = 1 - this.me; this.gameOver(g); }
+        else if (this.onLeave) this.onLeave(leave[0]);
       }
       return;
     }
+  },
+
+  /** How to Play, from the home screen or the game menu; resolves when it is closed. */
+  help() {
+    return new Promise(resolve => {
+      const h = $('#help');
+      h.querySelector('.help-body').scrollTop = 0;
+      h.classList.add('show');
+      $('#stage').classList.add('overlay-open');
+      this.closeHelp = () => {
+        h.classList.remove('show');
+        if (!$('#chooser').classList.contains('show') && !$('#gameover').classList.contains('show')) $('#stage').classList.remove('overlay-open');
+        this.closeHelp = null;
+        resolve();
+      };
+    });
   },
 
   /* -------------------------------------------------------------- effects */

@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png" type="image/png">
   <link rel="preload" href="assets/fonts/D-DINCondensed.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="css/style.css?v=8">
+  <link rel="stylesheet" href="css/style.css?v=9">
 </head>
 <body>
 <div id="viewport">
@@ -19,6 +19,7 @@
     <!-- ============================================================ Home -->
     <section id="menu" class="screen active">
       <button id="btn-play" class="play">Play</button>
+      <button id="btn-help" class="menu-link">How to Play</button>
     </section>
 
     <!-- ============================================================ Deck builder (The Witcher 3 layout) -->
@@ -118,6 +119,31 @@
       </div>
     </div>
 
+    <div id="help" class="overlay dark">
+      <div class="help-box">
+        <h2>How to Play</h2>
+        <div class="help-body"><div class="help-cols">
+          <section><h3>Winning</h3><p>A match is the best of three rounds: win two rounds to win the match. Each player has two gems and loses one for every round lost (both lose one when a round is a draw).</p></section>
+          <section><h3>Your cards</h3><p>You start with 10 cards from your deck and may redraw up to 2 of them. You get no new cards between rounds, so every card you play is one fewer for later.</p></section>
+          <section><h3>A turn</h3><p>Play one card, use your leader's ability (once per match), or pass. Units go on one of your three rows (close combat, ranged, siege); the strength of all your units together is your score.</p></section>
+          <section><h3>Passing</h3><p>When you have played enough, hold <b>Space</b> or <b>[HOLD] Pass</b>. You can't play again that round, but your opponent can carry on. The round ends when both players have passed, and the higher total wins it. Often the best move is to pass early in a round you can't win and keep your cards for the next one.</p></section>
+          <section><h3>Special cards</h3><p><b>Biting Frost, Impenetrable Fog, Torrential Rain</b>: every unit in that row drops to strength 1, on both sides. <b>Skellige Storm</b>: ranged and siege rows. <b>Clear Weather</b>: removes all weather. <b>Commander's Horn</b>: doubles a row. <b>Scorch</b>: destroys the strongest unit(s) on the board. <b>Decoy</b>: swap it with one of your units to take that card back.</p></section>
+          <section><h3>Abilities</h3><p><b>Agile</b>: close combat or ranged row. <b>Medic</b>: play a unit from your discard pile. <b>Morale Boost</b>: +1 to the other units in its row. <b>Muster</b>: brings the cards of the same name from your deck and hand. <b>Spy</b>: goes on your opponent's side and counts for them, but you draw 2 cards. <b>Tight Bond</b>: units with the same name in a row double each other. <b>Hero</b>: not affected by anything. <b>Summon Avenger</b>: a stronger unit replaces it when it leaves the board. <b>Berserker</b>: Mardroeme turns it into a bear.</p></section>
+          <section><h3>Factions</h3><p><b>Northern Realms</b>: draw a card when you win a round. <b>Nilfgaard</b>: win rounds that end in a draw. <b>Scoia'tael</b>: decide who goes first. <b>Monsters</b>: one random unit stays on the board after each round. <b>Skellige</b>: two random units return from your discard pile in round 3.</p></section>
+          <section><h3>Your deck</h3><p>After <b>Play</b> you build your deck: pick a faction and a leader, then move cards between Card Collection and Cards in Deck. A deck needs at least 22 unit cards and at most 10 special cards. Each faction's deck is saved automatically.</p></section>
+          <section><h3>Controls</h3><table>
+            <tr><th></th><th>PC</th><th>Phone</th></tr>
+            <tr><td>Play a card</td><td>click the card, then the row</td><td>tap the card, then the row</td></tr>
+            <tr><td>Look at a card</td><td>Z or right-click</td><td>press and hold</td></tr>
+            <tr><td>Pass</td><td>hold Space</td><td>hold [HOLD] Pass</td></tr>
+            <tr><td>Leader ability</td><td>click your leader</td><td>tap your leader</td></tr>
+            <tr><td>Menu</td><td>Esc</td><td>Menu, or the back button</td></tr>
+          </table></section>
+        </div></div>
+        <div class="help-hints"><button class="hint primary" data-act="close"><kbd>Esc</kbd>Close</button></div>
+      </div>
+    </div>
+
     <div id="gameover" class="overlay">
       <div class="go-title"></div>
       <table class="go-table"></table>
@@ -129,11 +155,20 @@
 </div>
 <div id="rotate-hint">Rotate your device to landscape</div>
 
-<script src="js/cards.js?v=8"></script>
-<script src="js/engine.js?v=8"></script>
-<script src="js/ai.js?v=8"></script>
-<script src="js/ui.js?v=8"></script>
-<script src="js/deckbuilder.js?v=8"></script>
-<script src="js/main.js?v=8"></script>
+<script>
+  // A web engine too old for the game (it needs Chrome 80 or newer): say so instead of showing a black screen
+  try { new Function('var a = {}; return a?.b ?? 1'); } catch (e) {
+    document.addEventListener('DOMContentLoaded', function () {
+      document.body.innerHTML = '<div style="position:fixed;top:0;right:0;bottom:0;left:0;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font:18px/1.5 sans-serif;color:#e8d9b8;background:#000">' +
+        'Gwent needs a newer web engine.<br>On Android, update <b>Android System WebView</b> and <b>Chrome</b> from the Play Store, then open Gwent again.<br>On a PC, update your browser.</div>';
+    });
+  }
+</script>
+<script src="js/cards.js?v=9"></script>
+<script src="js/engine.js?v=9"></script>
+<script src="js/ai.js?v=9"></script>
+<script src="js/ui.js?v=9"></script>
+<script src="js/deckbuilder.js?v=9"></script>
+<script src="js/main.js?v=9"></script>
 </body>
 </html>

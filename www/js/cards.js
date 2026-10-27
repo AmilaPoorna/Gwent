@@ -1,4 +1,6 @@
 'use strict';
+// Older Android WebViews have no structuredClone; all game data is plain JSON
+if (typeof structuredClone !== 'function') globalThis.structuredClone = o => JSON.parse(JSON.stringify(o));
 /*
  * Card database — Gwent as played in The Witcher 3: Wild Hunt
  * (base game + Hearts of Stone + Blood and Wine card sets).
@@ -81,8 +83,8 @@ function defLeader(id, name, faction, ability, desc, passive = false) {
 
 /* ---------------------------------------------------------------- Neutral */
 defUnits('neutral', [
-  ['geralt', 'Geralt of Rivia', 15, 'close', 'hero muster', 1, { muster: 'roach' }],
-  ['ciri', 'Cirilla Fiona Elen Riannon', 15, 'close', 'hero muster', 1, { muster: 'roach' }],
+  ['geralt', 'Geralt of Rivia', 15, 'close', 'hero'],
+  ['ciri', 'Cirilla Fiona Elen Riannon', 15, 'close', 'hero'],
   ['yennefer', 'Yennefer of Vengerberg', 7, 'ranged', 'hero medic'],
   ['triss', 'Triss Merigold', 7, 'close', 'hero'],
   ['avallach', "Avallac'h", 0, 'close', 'hero spy'],
@@ -367,8 +369,8 @@ function deckProblems(deck) {
   return errs;
 }
 
-/* A random, legal and fairly strong deck for the computer opponent, so every match plays differently: heroes, spies
-   and medics are favoured, Muster and Tight Bond cards come with their whole family, a unit brings the cards it
+/* A random, legal deck for the computer opponent, so every match plays differently. It is about as strong as the
+   starter decks (it scores about 50% against them with the same AI): heroes, spies and medics are favoured, Muster and Tight Bond cards come with their whole family, a unit brings the cards it
    summons, and the rest are the strongest units of a random selection. */
 const AI_SPECIALS = { decoy: 2, horn: 2, scorch: 1, frost: 1, fog: 1, rain: 1, storm: 1, clear: 1, mardroeme: 2 };
 
@@ -380,13 +382,13 @@ function randomDeck(faction) {
   const add = (t, n = t.count) => { while (n-- > 0 && copies(t.id) < t.count) cards.push(t.id); };
   const unitPool = shuffle(pool.filter(t => t.type === 'unit'));
   const families = ab => Object.values(unitPool.filter(t => t.abilities.includes(ab))
-    .reduce((g, t) => ((g[t.group] ||= []).push(t), g), {}));
+    .reduce((g, t) => ((g[t.group] = g[t.group] || []).push(t), g), {}));
 
-  for (const t of unitPool) if (t.hero && Math.random() < .75) add(t, 1);
+  for (const t of unitPool) if (t.hero && Math.random() < .4) add(t, 1);
   for (const ab of ['spy', 'medic']) unitPool.filter(t => t.abilities.includes(ab) && !t.hero).slice(0, 2).forEach(t => add(t, 1));
   for (const ab of ['muster', 'bond']) shuffle(families(ab)).slice(0, 2).forEach(f => f.forEach(t => add(t)));
   for (const t of unitPool) if (copies(t.id) && t.muster) unitPool.filter(x => x.group === t.muster).forEach(x => add(x));
-  const score = new Map(unitPool.map(t => [t.id, t.strength + Math.random() * 4]));
+  const score = new Map(unitPool.map(t => [t.id, t.strength + Math.random() * 12]));
   for (const t of [...unitPool].sort((a, b) => score.get(b.id) - score.get(a.id))) {
     if (units() >= 25) break;
     if (!t.hero) add(t, 1);
