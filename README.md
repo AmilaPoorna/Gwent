@@ -6,7 +6,8 @@ an app, and can be packaged as an Android APK.
 
 ## How it works (same flow as the game)
 
-1. **Play**: the home screen has only *Play*, a small *How to Play* link and the *Music* and *Sound* switches.
+1. **Play**: the home screen is plain black with the title, *Play*, a small *How to Play* link and the *Music* and
+   *Sound* switches.
 2. **Deck builder**: this is TW3's pre-match screen. Your deck for each faction is saved automatically, every
    time you change it, so next time you only edit it.
    - Switch faction with **Q / E** (LB / RB in the game) or by clicking the faction names.
@@ -53,6 +54,8 @@ All graphics, sounds and music are the original *Witcher 3* Gwent assets, in `ww
 - Several leader cards in the source had their art paired with another leader's name. I checked each one
   against footage of the game's *Choose a Leader* screen and fixed them (`tools/fix_leader_art.py`).
 - The card data was checked against the printed card faces.
+- The board art is 16:9. On wider screens (most phones) its plain outer wood is mirrored to fill the sides
+  (`tools/make_board_sides.py`), so the board reaches both edges of the screen.
 
 **Font.** TW3's interface font is PF DinText Cond Pro, which is commercial and therefore not bundled. If it is
 installed on your system the game uses it; otherwise it uses D-DIN Condensed, a free DIN condensed that is very
@@ -100,7 +103,8 @@ game being served (`npm start`).
 ```
 www/
   index.html            screens and board markup
-  css/style.css         styling; the 1920×1080 stage (the size of the board art) is scaled to fit any screen
+  css/style.css         styling; the 1920×1080 stage (the size of the board art) is scaled to fit any screen,
+                        and on wider screens the board and overlays reach the edges
   js/cards.js           card, leader and faction data, starter decks, deck rules
   js/engine.js          rules engine (pure, cloneable state)
   js/ai.js              computer opponent

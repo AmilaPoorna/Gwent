@@ -105,6 +105,7 @@ both sides. Skellige Storm hits the ranged and siege rows. Clear Weather removes
 | Change leader | X, or click the leader | tap the leader |
 | Look at a card up close | Z or right-click | press and hold the card |
 | Start the match | Enter | tap **Start game** |
+| Browse the cards on show (redraw, leaders, discard piles) | ← / →, or drag them sideways | swipe |
 | Redraw a card (start of match) | click it | tap it |
 | Play a card | click the card, then the row | tap the card, then the row |
 | Pass | hold Space | hold **[HOLD] Pass** |

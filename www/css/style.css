@@ -5,7 +5,9 @@
 @font-face { font-family: "D-DIN Condensed"; src: url("../assets/fonts/D-DINCondensed-Bold.woff2") format("woff2"); font-weight: 700; font-display: swap; }
 
 /* ==================================================================== Base
-   The stage is a fixed 1920×1080 canvas (the size of the original board art) scaled to fit the screen. */
+   The stage is a fixed 1920×1080 canvas (the size of the original board art) scaled to fit the screen. On screens
+   wider than 16:9 the board, the player panels and the overlays reach out to the screen's edges (--sx, set by UI.fit,
+   is how far). */
 :root {
   --font: "PF DinText Cond Pro", "PFDinTextCondPro-Regular", "PF Din Text Cond Pro", "D-DIN Condensed", "Arial Narrow", sans-serif;
   --gold: #d9b26e;
@@ -29,7 +31,7 @@ img { -webkit-user-drag: none; user-select: none; }
 kbd { font-family: var(--font); }
 
 #viewport { position: fixed; top: 0; right: 0; bottom: 0; left: 0; overflow: hidden; overflow: clip; background: #000; }
-#stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; overflow: clip; background: #000; }
+#stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; background: #000; }
 
 #rotate-hint { display: none; position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 99; background: #000; color: var(--gold); font: 22px var(--font); align-items: center; justify-content: center; text-align: center; padding: 20px; }
 @media (orientation: portrait) and (pointer: coarse) { #rotate-hint { display: flex; } }
@@ -50,20 +52,15 @@ kbd {
   border: 2px solid #8f7a5c; border-radius: 6px; background: #1b1712; color: #d8c8ad; font-size: 16px; font-weight: 700;
 }
 
-/* ==================================================================== Home */
-#menu { background: radial-gradient(ellipse at center, rgba(0, 0, 0, .35), rgba(0, 0, 0, .92) 75%), url("../assets/ui/board.jpg") center / cover; }
-.play {
-  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 18px 110px;
-  font-size: 64px; letter-spacing: .08em; color: var(--gold); text-transform: uppercase;
-  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, .85) 20%, rgba(0, 0, 0, .85) 80%, transparent);
-  border-top: 1px solid rgba(217, 178, 110, .35); border-bottom: 1px solid rgba(217, 178, 110, .35);
-  transition: color .2s, text-shadow .2s;
-}
-.play:hover { color: var(--gold-hi); text-shadow: 0 0 24px rgba(255, 200, 110, .55); }
-.menu-link { position: absolute; left: 50%; top: calc(50% + 100px); transform: translateX(-50%); padding: 12px 40px;
+/* ==================================================================== Home: plain black with the title and Play */
+#menu { background: #000; }
+.menu-title { position: absolute; left: 0; right: 0; top: 200px; margin: 0; padding-left: .08em; text-align: center; font-size: 220px; font-weight: 400; line-height: 1; letter-spacing: .08em; color: var(--gold); text-transform: uppercase; }
+.play { position: absolute; left: 50%; top: 520px; transform: translateX(-50%); padding: 8px 60px 8px calc(60px + .08em); font-size: 104px; line-height: 1; letter-spacing: .08em; color: var(--cream); text-transform: uppercase; }
+.play:hover { color: var(--gold-hi); }
+.menu-link { position: absolute; left: 50%; top: 690px; transform: translateX(-50%); padding: 12px 40px;
   font-size: 28px; letter-spacing: .08em; color: var(--cream); text-transform: uppercase; opacity: .75; transition: color .2s, opacity .2s; }
 .menu-link:hover { color: var(--gold-hi); opacity: 1; }
-.menu-settings { position: absolute; left: 50%; top: calc(50% + 175px); transform: translateX(-50%); display: flex; gap: 20px; }
+.menu-settings { position: absolute; left: 50%; top: 765px; transform: translateX(-50%); display: flex; gap: 20px; }
 .menu-settings .menu-link { position: static; transform: none; padding: 10px 26px; font-size: 22px; }
 
 /* ==================================================================== Cards */
@@ -107,7 +104,11 @@ kbd {
 .flyer { position: absolute; z-index: 45; pointer-events: none; transition: transform .34s cubic-bezier(.3, .7, .3, 1), width .34s, height .34s; }
 
 /* ==================================================================== Board */
-#game { background: #000 url("../assets/ui/board.jpg") 0 0 / 1920px 1080px no-repeat; }
+#game { background: #000 url("../assets/ui/board.jpg") 0 0 / 1920px 1080px no-repeat; overflow: visible; }
+/* Beside the board (screens wider than 16:9) its plain outer wood carries on, mirrored (tools/make_board_sides.py) */
+#game::before, #game::after { content: ""; position: absolute; top: 0; bottom: 0; width: var(--sx, 0px); background: url("../assets/ui/board_side_l.jpg") right top / auto 100% repeat-x; pointer-events: none; }
+#game::before { right: 100%; }
+#game::after { left: 100%; background-image: url("../assets/ui/board_side_r.jpg"); background-position: left top; }
 
 .row { position: absolute; left: 508px; width: 1012px; height: 120px; }
 #row-op-siege { top: 14px; }
@@ -144,9 +145,12 @@ kbd {
 
 /* Player panels (mirrored like the game: the opponent's name is above its stats, yours below) */
 .ppanel { position: absolute; left: 0; width: 452px; height: 138px; background: linear-gradient(90deg, rgba(0, 0, 0, .78), rgba(0, 0, 0, .55) 80%, rgba(0, 0, 0, .25)); border-top: 1px solid rgba(255, 255, 255, .07); border-bottom: 1px solid rgba(255, 255, 255, .07); }
+.ppanel::before { content: ""; position: absolute; right: 100%; top: -1px; bottom: -1px; width: var(--sx, 0px); background: rgba(0, 0, 0, .78); border-top: inherit; border-bottom: inherit; } /* to the screen's edge */
 #op-panel { top: 270px; }
 #me-panel { top: 672px; }
-.ppanel.active { border-bottom-color: var(--orange); border-top-color: rgba(240, 162, 58, .4); box-shadow: inset 0 -2px 10px -4px rgba(240, 162, 58, .7); }
+/* the active player's panel glows along its bottom edge, the part reaching to the screen's edge too */
+.ppanel.active { border-bottom-color: var(--orange); border-top-color: rgba(240, 162, 58, .4); background-image: linear-gradient(to top, rgba(240, 162, 58, .25), rgba(240, 162, 58, 0) 9px), linear-gradient(90deg, rgba(0, 0, 0, .78), rgba(0, 0, 0, .55) 80%, rgba(0, 0, 0, .25)); }
+.ppanel.active::before { background-image: linear-gradient(to top, rgba(240, 162, 58, .25), rgba(240, 162, 58, 0) 9px); }
 /* As measured on the current game: the ring at its own size with the portrait filling it, and the shield over the
    ring's top left (opponent) or bottom left (you) */
 .pp-portrait { position: absolute; left: 118px; top: 13px; width: 116px; height: 122px; }
@@ -232,20 +236,22 @@ kbd {
 #banner.long span { font-size: 32px; }
 
 /* ==================================================================== Card selection (redraw, medic, leaders, zoom) */
-.overlay { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 50; display: none; background: rgba(0, 0, 0, .62); }
+/* The spread shadow dims the screen beside the stage as well */
+.overlay { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 50; display: none; --dim: rgba(0, 0, 0, .62); background: var(--dim); box-shadow: 0 0 0 2000px var(--dim); }
 .overlay.show { display: block; }
-.overlay.dark { background: rgba(0, 0, 0, .8); }
-.ch-band { position: absolute; left: 0; right: 0; top: 138px; height: 66px; background: rgba(0, 0, 0, .86); display: flex; align-items: center; justify-content: center; }
+.overlay.dark { --dim: rgba(0, 0, 0, .8); }
+.ch-band { position: absolute; left: calc(-1 * var(--sx, 0px)); right: calc(-1 * var(--sx, 0px)); top: 138px; height: 66px; background: rgba(0, 0, 0, .86); display: flex; align-items: center; justify-content: center; }
 .ch-title { font-size: 32px; color: var(--gold); }
 .ch-carousel { position: absolute; left: 0; right: 0; top: 222px; height: 600px; touch-action: none; }
 .ch-carousel .slot { position: absolute; top: 0; left: 50%; transform-origin: center top; transition: transform .3s cubic-bezier(.25, .8, .3, 1), filter .3s, opacity .3s; will-change: transform, opacity; cursor: pointer; }
-.ch-carousel .slot.far { opacity: 0; pointer-events: none; }
+.ch-carousel.dragging .slot { transition: none; } /* the cards follow the finger */
+.ch-carousel .slot.far { pointer-events: none; }
 .ch-carousel .slot.center .card { box-shadow: 0 0 0 3px var(--orange), 0 0 30px rgba(240, 162, 58, .7); }
 .ch-carousel .slot:not(.center) { filter: brightness(.85); }
 .ch-desc { left: 678px; top: 836px; width: 564px; min-height: 140px; }
 .ch-hints { right: 100px; bottom: 58px; }
 
-#dialog { background: rgba(0, 0, 0, .65); z-index: 60; }
+#dialog { --dim: rgba(0, 0, 0, .65); z-index: 60; }
 #help { z-index: 70; }
 .help-box { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 1560px; height: 940px; display: flex; flex-direction: column;
   padding: 34px 60px 28px; background: rgba(0, 0, 0, .92); border-top: 1px solid rgba(217, 178, 110, .35); border-bottom: 1px solid rgba(217, 178, 110, .35); }
@@ -266,7 +272,7 @@ kbd {
 .dlg-buttons { display: flex; justify-content: center; gap: 34px; flex-wrap: wrap; }
 .dlg-buttons .hint { font-size: 24px; }
 
-#gameover { text-align: center; background: rgba(0, 0, 0, .8); }
+#gameover { text-align: center; --dim: rgba(0, 0, 0, .8); }
 .go-title { width: 656px; height: 416px; margin: 90px auto 0; background: center / contain no-repeat; }
 .go-table { margin: 10px auto; border-collapse: collapse; font-size: 28px; }
 .go-table td, .go-table th { padding: 10px 40px; border-bottom: 1px solid rgba(255, 255, 255, .08); }

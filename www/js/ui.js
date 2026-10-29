@@ -157,6 +157,9 @@ class HumanController {
 }
 
 /* ------------------------------------------------------------------ UI */
+// The card carousel's places, as in the game: offset from the centre and size of the centre card and of ±1 to ±4
+const CAROUSEL_X = [0, 310, 618, 860, 1040], CAROUSEL_S = [1, 0.832, 0.689, 0.6, 0.55];
+
 const UI = {
   me: 0, game: null, sel: null, turn: null, rowPick: null, seen: new Set(), lastDecks: null, ch: null, scale: 1,
   fly: null, passHold: null, onGameOver: null,
@@ -181,18 +184,48 @@ const UI = {
     const ph = $('#pass-hint');
     ph.addEventListener('pointerdown', e => { e.preventDefault(); this.startPassHold(); });
     for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) ph.addEventListener(ev, () => this.cancelPassHold());
-    // Carousel input from pointer events (mouse, touch and pen alike): a horizontal swipe browses, a tap selects.
+    // Carousel input from pointer events (mouse, touch and pen alike): the cards follow a sideways swipe and settle on
+    // the card nearest the centre when it ends (a flick moves on at least one card); a tap selects.
     const car = $('#chooser .ch-carousel');
-    let down = null;
-    car.addEventListener('pointerdown', e => { down = { x: e.clientX, slot: e.target.closest('.slot') }; });
-    car.addEventListener('pointercancel', () => { down = null; });
-    car.addEventListener('pointerup', e => {
-      if (!down) return;
-      const dx = e.clientX - down.x, slot = e.target.closest('.slot');
-      if (Math.abs(dx) > 40 * this.scale) this.moveCarousel(dx < 0 ? 1 : -1);
-      else if (slot && slot === down.slot) this.onSlotTap(slot);
-      down = null;
+    let drag = null;
+    car.addEventListener('pointerdown', e => {
+      if (!this.ch || (drag && drag.moved && drag.id !== e.pointerId && drag.ch === this.ch)) return; // one finger at a time
+      drag = { id: e.pointerId, ch: this.ch, x: e.clientX, from: this.ch.idx, pos: this.ch.idx, slot: e.target.closest('.slot'), moved: false, track: [] };
     });
+    car.addEventListener('pointermove', e => {
+      if (!drag || e.pointerId !== drag.id || drag.ch !== this.ch) return;
+      const dx = e.clientX - drag.x, last = this.ch.cards.length - 1;
+      if (!drag.moved) {
+        if (Math.abs(dx) < 10) return;
+        drag.moved = true;
+        car.classList.add('dragging');
+        try { car.setPointerCapture(e.pointerId); } catch { /* without it the swipe still works over the carousel */ }
+      }
+      drag.track.push([e.timeStamp, e.clientX]);
+      while (e.timeStamp - drag.track[0][0] > 100) drag.track.shift();
+      let pos = drag.from - dx / (CAROUSEL_X[1] * this.scale);
+      const give = over => 0.6 * over / (1 + over); // past the first or last card it gives way only a little
+      if (pos < 0) pos = -give(-pos); else if (pos > last) pos = last + give(pos - last);
+      drag.pos = pos;
+      this.carouselTo(pos);
+    });
+    const release = e => {
+      if (!drag || e.pointerId !== drag.id) return;
+      const d = drag;
+      drag = null;
+      car.classList.remove('dragging');
+      if (d.ch !== this.ch) return;
+      if (!d.moved) { if (e.type === 'pointerup' && d.slot) this.onSlotTap(d.slot); return; }
+      // finger speed over its last 100 ms, in screen pixels per ms (positive towards the later cards)
+      const recent = d.track.filter(([t]) => e.timeStamp - t < 100), a = recent[0], b = recent[recent.length - 1];
+      const v = recent.length > 1 && b[0] > a[0] ? (a[1] - b[1]) / (b[0] - a[0]) : 0;
+      let to = Math.round(d.pos + v / (CAROUSEL_X[1] * this.scale) * 100); // a flick carries on for a moment
+      if (Math.abs(v) > 0.3) to = v > 0 ? Math.max(to, Math.floor(d.pos) + 1) : Math.min(to, Math.ceil(d.pos) - 1);
+      this.carouselTo(Math.max(0, Math.min(this.ch.cards.length - 1, to)));
+    };
+    car.addEventListener('pointerup', release);
+    car.addEventListener('pointercancel', release);
+    car.addEventListener('lostpointercapture', e => { if (e.target === car) release(e); }); // not the card's touch capture it takes over
     $('#chooser .ch-hints').addEventListener('click', e => { const b = e.target.closest('[data-act]'); if (b && this.ch?.acts[b.dataset.act]) this.ch.acts[b.dataset.act](); });
     $('#game-hints').addEventListener('click', e => { const b = e.target.closest('[data-act]'); if (!b) return; if (b.dataset.act === 'menu') this.gameMenu(); if (b.dataset.act === 'zoom' && this.hover) this.zoomEl(this.hover); });
     $('#gameover .go-hints').addEventListener('click', e => { const b = e.target.closest('[data-act]'); if (b) this.gameOverAct(b.dataset.act); });
@@ -209,9 +242,11 @@ const UI = {
   },
 
   fit() {
-    const w = innerWidth, h = innerHeight, s = Math.min(w / 1920, h / 1080);
+    const w = innerWidth, h = innerHeight, s = Math.min(w / 1920, h / 1080), stage = $('#stage');
     this.scale = s;
-    $('#stage').style.transform = `translate(${(w - 1920 * s) / 2}px, ${(h - 1080 * s) / 2}px) scale(${s})`;
+    stage.style.transform = `translate(${(w - 1920 * s) / 2}px, ${(h - 1080 * s) / 2}px) scale(${s})`;
+    // On screens wider than 16:9 (most phones) the space beside the stage, which the board and overlays reach into
+    stage.style.setProperty('--sx', `${Math.max(0, Math.ceil((w / s - 1920) / 2))}px`);
   },
 
   show(id) { $$('.screen').forEach(x => x.classList.toggle('active', x.id === id)); if (this.onShow) this.onShow(id); },
@@ -642,15 +677,17 @@ const UI = {
     Sfx.play('open');
   },
 
-  renderCarousel() {
+  /** Lays the cards out around pos: a card's index, or a place between two while a swipe is being followed. */
+  renderCarousel(pos = this.ch.idx) {
     const { cards, idx, slots } = this.ch;
     const wrap = $('#chooser .ch-carousel');
     // Each card keeps its element while it is near the centre (beyond ±2 it is invisible), so moving the carousel
-    // slides the cards along instead of redrawing them in their new places
-    const X = [0, 310, 618, 860, 1040], S = [1, 0.832, 0.689, 0.6, 0.55];
+    // slides the cards along instead of redrawing them in their new places. Between two places a card's offset,
+    // size and fade are in between too.
+    const at = (v, a) => { const i = Math.min(Math.floor(a), v.length - 2); return v[i] + (v[i + 1] - v[i]) * (a - i); };
     const shown = new Set();
     cards.forEach((c, i) => {
-      const off = i - idx, a = Math.abs(off), key = c.uid ?? 'i' + i;
+      const off = i - pos, a = Math.abs(off), key = c.uid ?? 'i' + i;
       if (a > 4) return;
       shown.add(key);
       let el = slots.get(key);
@@ -660,12 +697,15 @@ const UI = {
         slots.set(key, el);
         wrap.append(el);
       }
-      el.className = 'slot' + (off === 0 ? ' center' : '') + (a > 2 ? ' far' : '');
-      el.dataset.off = off;
-      el.style.transform = `translateX(calc(-50% + ${Math.sign(off) * X[a]}px)) scale(${S[a]})`;
-      el.style.zIndex = 10 - a;
+      el.className = 'slot' + (i === idx ? ' center' : '') + (a > 2.5 ? ' far' : '');
+      el.dataset.off = i - idx;
+      el.style.transform = `translateX(calc(-50% + ${Math.sign(off) * at(CAROUSEL_X, a)}px)) scale(${at(CAROUSEL_S, a)})`;
+      el.style.opacity = Math.max(0, Math.min(1, 3 - a));
+      el.style.zIndex = Math.round(100 - 10 * a);
     });
     for (const [key, el] of slots) if (!shown.has(key)) { el.remove(); slots.delete(key); }
+    if (this.ch.descCard === cards[idx]) return;
+    this.ch.descCard = cards[idx];
     const t = CARDS[cards[idx].id];
     const d = $('#chooser .ch-desc');
     d.innerHTML = this.ch.descFor ? this.ch.descFor(cards[idx]) : descHTML(t, this.ch.extra);
@@ -674,10 +714,14 @@ const UI = {
 
   moveCarousel(d) {
     const n = this.ch.idx + d;
-    if (n < 0 || n >= this.ch.cards.length) return;
-    this.ch.idx = n;
-    Sfx.play('ui_card');
-    this.renderCarousel();
+    if (n >= 0 && n < this.ch.cards.length) this.carouselTo(n);
+  },
+
+  /** Moves the carousel to pos (see renderCarousel); the card nearest the centre is the chosen one. */
+  carouselTo(pos) {
+    const idx = Math.max(0, Math.min(this.ch.cards.length - 1, Math.round(pos)));
+    if (idx !== this.ch.idx) { this.ch.idx = idx; Sfx.play('ui_card'); }
+    this.renderCarousel(pos);
   },
 
   onSlotTap(slot) {
