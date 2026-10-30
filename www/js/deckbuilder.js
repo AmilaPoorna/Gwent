@@ -189,7 +189,8 @@ const DeckBuilder = {
 
   renderHints() {
     $('#db-hints').innerHTML = hintsHTML([
-      { act: 'info', label: this.focus === 'deck' ? 'Remove a card' : 'Add a card', key: TOUCH ? 'Tap' : 'Click' },
+      TOUCH ? { act: 'info', label: 'Tap a card to add or remove it' }
+        : { act: 'info', label: this.focus === 'deck' ? 'Remove a card' : 'Add a card', key: 'Click' },
       { act: 'leader', key: 'X', label: 'Change leaders' },
       { act: 'zoom', key: 'Z', label: 'Zoom' },
       { act: 'decks', key: 'Q/E', label: 'Change decks' },

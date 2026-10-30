@@ -24,6 +24,9 @@ an app, and can be packaged as an Android APK.
      (shown as a defeat) and *Quit to Menu*.
 4. **Results**: Victory, Defeat or Draw with the round scores. **Enter** plays again, **Esc** goes back to the deck.
 
+On phones and tablets, including the Android app, the hints are plain buttons without the keys. A card is zoomed by
+pressing and holding it, and *How to Play* explains only the touch controls.
+
 ## Rules and content
 
 - **Factions:** all 5, with their faction perks.

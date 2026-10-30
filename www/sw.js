@@ -1,5 +1,5 @@
 // Offline cache so the installed app works without a connection.
-const CACHE = 'gwent-v11';
+const CACHE = 'gwent-v12';
 const FILES = [
   './', 'index.html', 'manifest.webmanifest', 'css/style.css', 'icons/icon-192.png',
   'js/cards.js', 'js/engine.js', 'js/ai.js', 'js/ui.js', 'js/deckbuilder.js', 'js/main.js',
