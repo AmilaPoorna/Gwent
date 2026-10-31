@@ -8,10 +8,47 @@ const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;'
 const TOUCH = matchMedia('(pointer: coarse)').matches;
 if (TOUCH) document.documentElement.classList.add('touch');
 
+// Saved data lives in localStorage, which can be read at once, but the browser (and the Android app's WebView) only
+// writes it to disk a few seconds later, so a change made just before the app is killed would be lost. Each change is
+// therefore also put in IndexedDB, which is written straight away, and on start a copy newer than localStorage's wins.
 const Store = {
   get(k, d) { try { const v = localStorage.getItem('gwent.' + k); return v ? JSON.parse(v) ?? d : d; } catch { return d; } },
-  set(k, v) { try { localStorage.setItem('gwent.' + k, JSON.stringify(v)); } catch { /* storage unavailable */ } },
+  set(k, v) {
+    const t = Date.now(), json = JSON.stringify(v);
+    try { localStorage.setItem('gwent.' + k, json); localStorage.setItem('gwent.' + k + '@t', t); } catch { /* storage unavailable */ }
+    this.db().then(db => db.transaction('kv', 'readwrite').objectStore('kv').put({ k, json, t })).catch(() => {});
+  },
+  db() {
+    return this._db || (this._db = new Promise((resolve, reject) => {
+      const r = indexedDB.open('gwent', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('kv', { keyPath: 'k' });
+      r.onsuccess = () => resolve(r.result);
+      r.onerror = () => reject(r.error);
+    }));
+  },
+  /** Resolves true when a newer copy was found in IndexedDB and put back into localStorage. */
+  restore() {
+    return this.db().then(db => new Promise(resolve => {
+      const r = db.transaction('kv').objectStore('kv').getAll();
+      r.onsuccess = () => {
+        let changed = false;
+        for (const { k, json, t } of r.result) {
+          try {
+            if (t > +(localStorage.getItem('gwent.' + k + '@t') || 0)) {
+              localStorage.setItem('gwent.' + k, json);
+              localStorage.setItem('gwent.' + k + '@t', t);
+              changed = +localStorage.getItem('gwent.' + k + '@t') === t || changed;
+            }
+          } catch { /* storage unavailable */ }
+        }
+        resolve(changed);
+      };
+      r.onerror = () => resolve(false);
+    })).catch(() => false);
+  },
 };
+// After a crash: reload once so the settings and decks are read from the restored copy
+Store.restore().then(changed => { if (changed) location.reload(); });
 
 const Settings = Object.assign({ name: 'Geralt', sound: true, music: true }, Store.get('settings', {}));
 function saveSettings() { Store.set('settings', Settings); }
